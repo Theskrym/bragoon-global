@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bragoon</title>
+    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* Estilos adicionais para corrigir os problemas */
+        .part-card {
+            height: auto;
+            min-height: 350px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .part-header {
+            min-height: 60px;
+            margin-bottom: 10px;
+        }
+        
+        .part-details {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+        
+        .price-rating-container {
+            margin-top: auto;
+            padding-top: 10px;
+        }
+        
+        .product-image {
+            max-height: 160px;
+            width: auto;
+            margin: 0 auto;
+            display: block;
+        }
+        
+        /* Estilos para as abas */
+        .product-tabs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin-bottom: 20px;
+        }
+        
+        .product-tab {
+            padding: 8px 15px;
+            background: #f5f5f5;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        .product-tab.active {
+            background: #b08c43;
+            color: white;
+            border-color: #b08c43;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        /* Ajuste no grid para reduzir espaçamento */
+        #parts-container {
+            grid-gap: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div id="loading" class="loading-overlay" style="display: none;">
+        <div class="spinner"></div>
+    </div>
+
+    <header>
+        <div class="navbar-modular">
+            <div class="navbar-left">
+                <ul>
+                    <li><a href="#">Comparar</a></li>
+                    <li><a href="#">Alertas</a></li>
+                </ul>
+            </div>
+
+            <div class="navbar-center">
+                <div class="search-container">
+                    <input type="text" id="search-input" placeholder="Pesquisar...">
+                    <button id="search-button">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="navbar-right">
+                <div class="logo">
+                    <div onclick="window.location.href='/'" class="logo-text">BRAGOON</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Dropdown menus gerados com base em TODOS os produtos -->
+        <div class="dropdown-navbar">
+            {% set menus = [] %}
+            {% for product in products %}
+                {% if product.menu not in menus %}
+                    {% set _ = menus.append(product.menu) %}
+                    <div class="menu-group">
+                        <button class="menu-btn">{{ product.menu | replace('_', ' ') | title }}</button>
+                        <div class="type-dropdown">
+                            <a href="#" data-menu="{{ product.menu }}" data-type="">TODOS</a>
+                            {% set types = [] %}
+                            {% for p in products if p.menu == product.menu and p.type not in types %}
+                                {% set _ = types.append(p.type) %}
+                                <a href="#" data-menu="{{ product.menu }}" data-type="{{ p.type }}">{{ p.type | replace('_', ' ') | title }}</a>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+    </header>
+
+    <main>
+        <div class="builder-container">
+            <aside class="filters-sidebar">
+                <div class="filter-group">
+                    <h3>Lojas</h3>
+                    <div id="store-filters">
+                        {% set stores = [] %}
+                        {% for product in products %}
+                            {% if product.store not in stores %}
+                                {% set _ = stores.append(product.store) %}
+                                <label><input type="checkbox" name="store" value="{{ product.store }}"> {{ product.store }}<br></label>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <div class="filter-group" id="type-filters-container">
+                    <h3>Tipos</h3>
+                    <div id="type-filters"></div>
+                </div>
+                
+                <div class="filter-group" id="filter-filters-container">
+                    <h3>Filtros</h3>
+                    <div id="filter-filters"></div>
+                </div>
+                
+                <div class="filter-group">
+                    <h3>Ordenar por</h3>
+                    <select id="sort-select">
+                        <option value="price_asc">Preço: Menor para Maior</option>
+                        <option value="price_desc">Preço: Maior para Menor</option>
+                        <option value="rating_desc">Melhor Avaliação</option>
+                    </select>
+                </div>
+            </aside>
+
+            <section class="parts-grid">
+                <div class="parts-header">
+                    <h2>Componentes</h2>
+                    <div class="pagination-controls">
+                        <button id="prev-page" disabled>&#60;</button>
+                        <span id="current-page">1</span> / <span id="total-pages">1</span>
+                        <button id="next-page">&#62;</button>
+                    </div>
+                </div>
+                
+                <!-- Tabs container - agora integrado com a paginação existente -->
+                <div class="product-tabs" id="product-tabs"></div>
+                
+                <!-- Tab contents container -->
+                <div id="tab-contents">
+                    {% for i in range((products|length / 100)|round(0, 'ceil')|int) %}
+                        {% set start = i * 100 %}
+                        {% set end = [start + 100, products|length]|min %}
+                        <div class="tab-content" id="tab-{{ i + 1 }}" {% if i == 0 %}class="active"{% endif %}>
+                            <div class="parts-container" id="parts-container-{{ i + 1 }}">
+                                {% for product in products[start:end] %}
+                                <div class="part-card" 
+                                    data-store="{{ product.store }}" 
+                                    data-menu="{{ product.menu }}"
+                                    data-type="{{ product.type }}"
+                                    data-filter="{{ product.filter }}"
+                                    data-subfilter="{{ product.subfilter }}"
+                                    data-price="{{ product.price | replace('R$ ', '') | replace('.', '') | replace(',', '.') }}"
+                                    data-rating="{{ product.rating | replace('/5', '') }}">
+                                    <div class="part-header">
+                                        <h3>{{ product.name }}</h3>
+                                        <span class="store-badge {{ product.store | lower }}">{{ product.store }}</span>
+                                    </div>  
+
+                                    <div class="part-details">
+                                        <a href="/product_detail.html?id={{ product.product_ID }}">
+                                            <img src="{{ product.image_url }}" 
+                                                alt="{{ product.name }}" 
+                                                class="product-image" 
+                                                loading="lazy"             
+                                                width="200" 
+                                                height="200">
+                                        </a>
+                                        
+                                        <div class="price-rating-container">
+                                            <p class="price">{{ product.price }}</p>
+                                            <div class="rating">
+                                                {% set rating_value = product.rating.split('/')[0] | float %}
+                                                {% set full_stars = rating_value | int %}
+                                                {% set has_half_star = (rating_value - full_stars) >= 0.5 %}
+                                                {% set empty_stars = 5 - full_stars - (1 if has_half_star else 0) %}
+                                                
+                                                {% for i in range(full_stars) %}
+                                                    <i class="fas fa-star"></i>
+                                                {% endfor %}
+                                                
+                                                {% if has_half_star %}
+                                                    <i class="fas fa-star-half-alt"></i>
+                                                {% endif %}
+                                                
+                                                {% for i in range(empty_stars) %}
+                                                    <i class="far fa-star"></i>
+                                                {% endfor %}
+                                                
+                                                <span>({{ product.review_count }})</span>
+                                            </div>
+                                        </div>
+                                        
+                                        <a href="/product_detail.html?id={{ product.product_ID }}" class="compare-btn">Ver Detalhes</a>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <script src="/scripts.js"></script>
+
+
+    <footer>
+        <div class="footer-content">
+            <div class="footer-section">
+                <h3>Contato</h3>
+                <p>Email: bragoonstore@gmail.com</p>
+            </div>
+            <div class="footer-section">
+                <h3>Redes Sociais</h3>
+                <ul>
+                    <li><a href="https://x.com/Bragoonstore" target="_blank">Twitter</a></li>
+                </ul>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>

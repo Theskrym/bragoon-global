@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste de Cascata de Filtros - BRAGOON</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            border-bottom: 3px solid #00aa00;
+            padding-bottom: 10px;
+        }
+        .filter-group {
+            margin: 15px 0;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        select:focus {
+            outline: none;
+            border-color: #00aa00;
+            box-shadow: 0 0 5px rgba(0, 170, 0, 0.3);
+        }
+        .result-box {
+            background: #f0f0f0;
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 4px;
+            border-left: 4px solid #00aa00;
+        }
+        .result-box h3 {
+            margin-top: 0;
+            color: #00aa00;
+        }
+        .debug-log {
+            background: #1e1e1e;
+            color: #00ff00;
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .debug-log .log-entry {
+            margin: 5px 0;
+            padding: 3px 0;
+            border-bottom: 1px solid #333;
+        }
+        .log-info { color: #0088ff; }
+        .log-success { color: #00ff00; }
+        .log-warning { color: #ffaa00; }
+        .log-error { color: #ff0000; }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🧪 Teste de Cascata de Filtros</h1>
+        
+        <div class="filter-group">
+            <label for="menu">Menu (Categoria):</label>
+            <select id="menu">
+                <option value="">-- Carregando menus... --</option>
+            </select>
+        </div>
+
+        <div class="filter-group">
+            <label for="type">Tipo:</label>
+            <select id="type">
+                <option value="">-- Selecione um menu --</option>
+            </select>
+        </div>
+
+        <div class="filter-group">
+            <label for="filter">Filtro:</label>
+            <select id="filter">
+                <option value="">-- Selecione um tipo --</option>
+            </select>
+        </div>
+
+        <div class="filter-group" id="subfilter-group" style="display: none;">
+            <label for="subfilter">Subfiltro:</label>
+            <select id="subfilter">
+                <option value="">-- Selecione um filtro --</option>
+            </select>
+        </div>
+
+        <div class="result-box">
+            <h3>📊 Estado Atual:</h3>
+            <p><strong>Menu:</strong> <span id="result-menu">Nenhum</span></p>
+            <p><strong>Tipo:</strong> <span id="result-type">Nenhum</span></p>
+            <p><strong>Filtro:</strong> <span id="result-filter">Nenhum</span></p>
+            <p><strong>Subfiltro:</strong> <span id="result-subfilter">Nenhum</span></p>
+        </div>
+
+        <div class="debug-log" id="debug-log">
+            <div class="log-entry log-info">[INIT] Inicializando teste...</div>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script>
+        let filterCache = null;
+        const debugLog = document.getElementById('debug-log');
+
+        function addLog(message, level = 'info') {
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${level}`;
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            debugLog.appendChild(entry);
+            debugLog.scrollTop = debugLog.scrollHeight;
+        }
+
+        async function initTest() {
+            addLog('Carregando opções de filtros...', 'info');
+            try {
+                const result = await getFilterOptions();
+                if (result.success && result.data) {
+                    filterCache = result.data;
+                    addLog(`✅ Filtros carregados: ${result.data.menus.length} menus, ${result.data.stores.length} lojas`, 'success');
+                    populateMenus();
+                    setupListeners();
+                } else {
+                    addLog('❌ Erro na resposta da API', 'error');
+                }
+            } catch (error) {
+                addLog(`❌ Erro: ${error.message}`, 'error');
+            }
+        }
+
+        function populateMenus() {
+            const menuSelect = document.getElementById('menu');
+            menuSelect.innerHTML = '<option value="">-- Selecione Menu --</option>';
+            filterCache.menus.forEach(menu => {
+                const option = document.createElement('option');
+                option.value = menu;
+                option.textContent = menu;
+                menuSelect.appendChild(option);
+            });
+            addLog(`📂 ${filterCache.menus.length} menus populados`, 'success');
+        }
+
+        function setupListeners() {
+            document.getElementById('menu').addEventListener('change', onMenuChange);
+            document.getElementById('type').addEventListener('change', onTypeChange);
+            document.getElementById('filter').addEventListener('change', onFilterChange);
+            document.getElementById('subfilter').addEventListener('change', onSubfilterChange);
+            addLog('✅ Listeners configurados', 'success');
+        }
+
+        function onMenuChange() {
+            const menu = document.getElementById('menu').value;
+            addLog(`📂 Menu mudou para: "${menu}"`, 'warning');
+            
+            // Reset subordinados
+            document.getElementById('type').value = '';
+            document.getElementById('filter').value = '';
+            document.getElementById('subfilter').value = '';
+
+            // Popula tipos
+            const typeSelect = document.getElementById('type');
+            typeSelect.innerHTML = '<option value="">-- Selecione Tipo --</option>';
+
+            if (menu && filterCache.type && filterCache.type[menu]) {
+                const types = filterCache.type[menu];
+                addLog(`  → Encontrados ${types.length} tipos`, 'info');
+                types.forEach(type => {
+                    const option = document.createElement('option');
+                    option.value = type;
+                    option.textContent = type;
+                    typeSelect.appendChild(option);
+                });
+            } else {
+                addLog(`  ⚠️ Nenhum tipo encontrado para menu: ${menu}`, 'warning');
+            }
+
+            updateResults();
+        }
+
+        function onTypeChange() {
+            const menu = document.getElementById('menu').value;
+            const type = document.getElementById('type').value;
+            addLog(`🏷️ Tipo mudou para: "${type}"`, 'warning');
+
+            // Reset subordinados
+            document.getElementById('filter').value = '';
+            document.getElementById('subfilter').value = '';
+
+            // Popula filtros
+            const filterSelect = document.getElementById('filter');
+            filterSelect.innerHTML = '<option value="">-- Selecione Filtro --</option>';
+
+            if (type && menu) {
+                const key = `${menu}_${type}`;
+                addLog(`  → Procurando filtros com chave: "${key}"`, 'info');
+
+                if (filterCache.filter && filterCache.filter[key]) {
+                    const filters = filterCache.filter[key];
+                    addLog(`  → Encontrados ${filters.length} filtros`, 'success');
+                    filters.forEach(filter => {
+                        const option = document.createElement('option');
+                        option.value = filter;
+                        option.textContent = filter;
+                        filterSelect.appendChild(option);
+                    });
+                } else {
+                    addLog(`  ❌ Chave não encontrada no cache`, 'error');
+                    addLog(`     Chaves disponíveis: ${Object.keys(filterCache.filter || {}).slice(0, 3).join(', ')}...`, 'info');
+                }
+            }
+
+            updateResults();
+        }
+
+        function onFilterChange() {
+            const menu = document.getElementById('menu').value;
+            const type = document.getElementById('type').value;
+            const filter = document.getElementById('filter').value;
+            addLog(`🎯 Filtro mudou para: "${filter}"`, 'warning');
+
+            // Reset subfiltro
+            document.getElementById('subfilter').value = '';
+            const subfilterGroup = document.getElementById('subfilter-group');
+            subfilterGroup.style.display = 'none';
+
+            // Popula subfiltros
+            const subfilterSelect = document.getElementById('subfilter');
+            subfilterSelect.innerHTML = '<option value="">-- Selecione Subfiltro --</option>';
+
+            if (filter && menu && type) {
+                const key = `${menu}_${type}_${filter}`;
+                addLog(`  → Procurando subfiltros com chave: "${key}"`, 'info');
+
+                if (filterCache.subfilter && filterCache.subfilter[key]) {
+                    const subfilters = filterCache.subfilter[key];
+                    addLog(`  → Encontrados ${subfilters.length} subfiltros`, 'success');
+
+                    if (subfilters.length > 0) {
+                        subfilterGroup.style.display = 'block';
+                        subfilters.forEach(subfilter => {
+                            const option = document.createElement('option');
+                            option.value = subfilter;
+                            option.textContent = subfilter;
+                            subfilterSelect.appendChild(option);
+                        });
+                        addLog(`  ✅ Grupo de subfiltro exibido com ${subfilters.length} opções`, 'success');
+                    } else {
+                        addLog(`  ℹ️ Array de subfiltros vazio - grupo ocultado`, 'info');
+                    }
+                } else {
+                    addLog(`  ❌ Chave não encontrada no cache`, 'error');
+                }
+            }
+
+            updateResults();
+        }
+
+        function onSubfilterChange() {
+            const subfilter = document.getElementById('subfilter').value;
+            addLog(`📍 Subfiltro mudou para: "${subfilter}"`, 'warning');
+            updateResults();
+        }
+
+        function updateResults() {
+            document.getElementById('result-menu').textContent = document.getElementById('menu').value || 'Nenhum';
+            document.getElementById('result-type').textContent = document.getElementById('type').value || 'Nenhum';
+            document.getElementById('result-filter').textContent = document.getElementById('filter').value || 'Nenhum';
+            document.getElementById('result-subfilter').textContent = document.getElementById('subfilter').value || 'Nenhum';
+        }
+
+        // Iniciar teste ao carregar
+        document.addEventListener('DOMContentLoaded', initTest);
+    </script>
+</body>
+</html>

@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste Rápido - Frontend2</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-result {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        button {
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #764ba2;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Teste Rápido - Frontend2</h1>
+    
+    <div id="tests"></div>
+    
+    <button onclick="runAllTests()">Executar Todos os Testes</button>
+    <button onclick="location.href='debug.html'">Ir para Debug Completo</button>
+
+    <script src="js/api.js"></script>
+    <script>
+        function addTest(title, result, success) {
+            const tests = document.getElementById('tests');
+            const div = document.createElement('div');
+            div.className = 'test-result ' + (success ? 'success' : 'error');
+            div.textContent = (success ? '✅' : '❌') + ' ' + title + ': ' + result;
+            tests.appendChild(div);
+        }
+
+        function addInfo(message) {
+            const tests = document.getElementById('tests');
+            const div = document.createElement('div');
+            div.className = 'test-result info';
+            div.textContent = 'ℹ️ ' + message;
+            tests.appendChild(div);
+        }
+
+        async function runAllTests() {
+            document.getElementById('tests').innerHTML = '';
+            
+            // Teste 1: API_BASE_URL definida
+            try {
+                if (typeof API_BASE_URL !== 'undefined') {
+                    addTest('API_BASE_URL', `${API_BASE_URL}`, true);
+                } else {
+                    addTest('API_BASE_URL', 'não definida', false);
+                }
+            } catch (e) {
+                addTest('API_BASE_URL', e.message, false);
+            }
+
+            // Teste 2: Funções existem
+            try {
+                const funcs = ['searchProducts', 'getFilterOptions', 'getProductDetail', 'apiCall'];
+                let allExist = true;
+                for (const func of funcs) {
+                    if (typeof window[func] === 'undefined') {
+                        addTest('Função: ' + func, 'não definida', false);
+                        allExist = false;
+                    }
+                }
+                if (allExist) {
+                    addTest('Funções', 'todas definidas', true);
+                }
+            } catch (e) {
+                addTest('Verificar funções', e.message, false);
+            }
+
+            // Teste 3: Backend respondendo
+            addInfo('Testando backend na porta 8000...');
+            try {
+                const response = await fetch('http://localhost:8000/api/products/?limit=1');
+                if (response.ok) {
+                    const data = await response.json();
+                    addTest('Backend', `respondendo (${data.results?.length || data.products?.length || '?'} produtos)`, true);
+                } else {
+                    addTest('Backend', `erro HTTP ${response.status}`, false);
+                }
+            } catch (e) {
+                addTest('Backend', e.message, false);
+            }
+
+            // Teste 4: Filtros
+            addInfo('Testando carregamento de filtros...');
+            try {
+                const result = await getFilterOptions();
+                if (result.success && result.data) {
+                    const menus = result.data.menus?.length || 0;
+                    const stores = result.data.stores?.length || 0;
+                    addTest('Filtros', `${menus} menus, ${stores} lojas`, true);
+                } else {
+                    addTest('Filtros', 'erro: ' + result.error, false);
+                }
+            } catch (e) {
+                addTest('Filtros', e.message, false);
+            }
+
+            // Teste 5: Busca de produtos
+            addInfo('Testando busca de produtos...');
+            try {
+                const result = await searchProducts({page: 1, limit: 1});
+                if (result.success && result.data) {
+                    const count = result.data.products?.length || 0;
+                    const total = result.data.pagination?.total_items || 0;
+                    addTest('Produtos', `${count} retornados de ${total} total`, true);
+                } else {
+                    addTest('Produtos', 'erro: ' + result.error, false);
+                }
+            } catch (e) {
+                addTest('Produtos', e.message, false);
+            }
+
+            // Teste 6: LocalStorage
+            try {
+                localStorage.setItem('test', 'ok');
+                localStorage.removeItem('test');
+                addTest('LocalStorage', 'funcionando', true);
+            } catch (e) {
+                addTest('LocalStorage', e.message, false);
+            }
+
+            addInfo('✅ Testes completos!');
+        }
+
+        // Rodar automaticamente ao carregar
+        window.addEventListener('load', runAllTests);
+    </script>
+</body>
+</html>

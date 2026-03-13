@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - BRAGOON Store</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <!-- HEADER -->
+    <header>
+        <nav class="navbar">
+            <div class="navbar-container">
+                <div class="logo">
+                    <h1>🎮 BRAGOON Store</h1>
+                </div>
+                <ul class="nav-menu">
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="produtos.html">Produtos</a></li>
+                    <li><a href="sobre.html">Sobre</a></li>
+                    <li><a href="contato.html">Contato</a></li>
+                    <li><a href="login.html" class="active btn-login">Login</a></li>
+                </ul>
+                <div class="cart-icon">
+                    <a href="carrinho.html" style="color: white; text-decoration: none;">🛒 <span id="cart-count">0</span></a>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <!-- MAIN CONTENT -->
+    <main>
+        <div class="login-container">
+            <div class="login-box">
+                <h1>Faça Login na sua Conta</h1>
+                <p class="subtitle">Acesse sua conta BRAGOON Store</p>
+
+                <form id="login-form" method="POST" action="/api/login">
+                    <div class="form-group">
+                        <label for="email">Email</label>
+                        <input 
+                            type="email" 
+                            id="email" 
+                            name="email" 
+                            placeholder="seu@email.com" 
+                            required 
+                            autocomplete="email"
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label for="password">Senha</label>
+                        <input 
+                            type="password" 
+                            id="password" 
+                            name="password" 
+                            placeholder="••••••••" 
+                            required 
+                            autocomplete="current-password"
+                        >
+                    </div>
+
+                    <div class="form-check">
+                        <input type="checkbox" id="remember" name="remember" value="true">
+                        <label for="remember">Lembrar de mim</label>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-full">Entrar</button>
+                </form>
+
+                <div class="divider">Ou</div>
+
+                <button class="btn btn-secondary btn-full" onclick="window.location.href='register.html'">
+                    Criar Nova Conta
+                </button>
+
+                <div class="login-links">
+                    <a href="#">Esqueceu sua senha?</a>
+                </div>
+
+                <div id="login-message" class="message-box" style="display: none;"></div>
+            </div>
+        </div>
+    </main>
+
+    <!-- FOOTER -->
+    <footer>
+        <div class="footer-container">
+            <div class="footer-section">
+                <h4>Sobre BRAGOON</h4>
+                <p>A loja de confiança para componentes de informática de qualidade.</p>
+            </div>
+            <div class="footer-section">
+                <h4>Links Rápidos</h4>
+                <ul>
+                    <li><a href="sobre.html">Sobre Nós</a></li>
+                    <li><a href="contato.html">Contato</a></li>
+                    <li><a href="#">Política de Privacidade</a></li>
+                    <li><a href="#">Termos de Serviço</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h4>Contato</h4>
+                <p>Email: contato@bragoon.com</p>
+                <p>Telefone: (11) 9999-9999</p>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2026 BRAGOON Store. Todos os direitos reservados.</p>
+        </div>
+    </footer>
+
+    <script src="js/api.js"></script>
+    <script src="js/login.js"></script>
+</body>
+</html>

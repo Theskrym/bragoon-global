@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cadastro - BRAGOON Store</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <!-- HEADER -->
+    <header>
+        <nav class="navbar">
+            <div class="navbar-container">
+                <div class="logo">
+                    <h1>🎮 BRAGOON Store</h1>
+                </div>
+                <ul class="nav-menu">
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="produtos.html">Produtos</a></li>
+                    <li><a href="sobre.html">Sobre</a></li>
+                    <li><a href="contato.html">Contato</a></li>
+                    <li><a href="login.html" class="btn-login">Login</a></li>
+                </ul>
+                <div class="cart-icon">
+                    <a href="carrinho.html" style="color: white; text-decoration: none;">🛒 <span id="cart-count">0</span></a>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <!-- MAIN CONTENT -->
+    <main>
+        <div class="register-container">
+            <div class="register-box">
+                <h1>Criar Conta BRAGOON Store</h1>
+                <p class="subtitle">Preencha os dados abaixo para se cadastrar</p>
+
+                <form id="register-form" method="POST" action="/api/register">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="first-name">Nome</label>
+                            <input 
+                                type="text" 
+                                id="first-name" 
+                                name="first_name" 
+                                placeholder="Seu nome" 
+                                required 
+                                minlength="2"
+                            >
+                        </div>
+                        <div class="form-group">
+                            <label for="last-name">Sobrenome</label>
+                            <input 
+                                type="text" 
+                                id="last-name" 
+                                name="last_name" 
+                                placeholder="Seu sobrenome" 
+                                required 
+                                minlength="2"
+                            >
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="reg-email">Email</label>
+                        <input 
+                            type="email" 
+                            id="reg-email" 
+                            name="email" 
+                            placeholder="seu@email.com" 
+                            required 
+                            autocomplete="email"
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label for="phone">Telefone</label>
+                        <input 
+                            type="tel" 
+                            id="phone" 
+                            name="phone" 
+                            placeholder="(11) 99999-9999" 
+                            autocomplete="tel"
+                        >
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="password">Senha</label>
+                            <input 
+                                type="password" 
+                                id="password" 
+                                name="password" 
+                                placeholder="••••••••" 
+                                required 
+                                minlength="6"
+                                autocomplete="new-password"
+                            >
+                        </div>
+                        <div class="form-group">
+                            <label for="password-confirm">Confirmar Senha</label>
+                            <input 
+                                type="password" 
+                                id="password-confirm" 
+                                name="password_confirm" 
+                                placeholder="••••••••" 
+                                required 
+                                minlength="6"
+                                autocomplete="new-password"
+                            >
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="address">Endereço</label>
+                        <input 
+                            type="text" 
+                            id="address" 
+                            name="address" 
+                            placeholder="Rua, número..." 
+                            required
+                        >
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="city">Cidade</label>
+                            <input 
+                                type="text" 
+                                id="city" 
+                                name="city" 
+                                placeholder="São Paulo" 
+                                required
+                            >
+                        </div>
+                        <div class="form-group">
+                            <label for="state">Estado</label>
+                            <select id="state" name="state" required>
+                                <option value="">Selecionar</option>
+                                <option value="AC">Acre</option>
+                                <option value="AL">Alagoas</option>
+                                <option value="AP">Amapá</option>
+                                <option value="AM">Amazonas</option>
+                                <option value="BA">Bahia</option>
+                                <option value="CE">Ceará</option>
+                                <option value="DF">Distrito Federal</option>
+                                <option value="ES">Espírito Santo</option>
+                                <option value="GO">Goiás</option>
+                                <option value="MA">Maranhão</option>
+                                <option value="MT">Mato Grosso</option>
+                                <option value="MS">Mato Grosso do Sul</option>
+                                <option value="MG">Minas Gerais</option>
+                                <option value="PA">Pará</option>
+                                <option value="PB">Paraíba</option>
+                                <option value="PR">Paraná</option>
+                                <option value="PE">Pernambuco</option>
+                                <option value="PI">Piauí</option>
+                                <option value="RJ">Rio de Janeiro</option>
+                                <option value="RN">Rio Grande do Norte</option>
+                                <option value="RS">Rio Grande do Sul</option>
+                                <option value="RO">Rondônia</option>
+                                <option value="RR">Roraima</option>
+                                <option value="SC">Santa Catarina</option>
+                                <option value="SP">São Paulo</option>
+                                <option value="SE">Sergipe</option>
+                                <option value="TO">Tocantins</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="zip">CEP</label>
+                            <input 
+                                type="text" 
+                                id="zip" 
+                                name="zip" 
+                                placeholder="00000-000" 
+                                required 
+                                pattern="\d{5}-\d{3}"
+                            >
+                        </div>
+                    </div>
+
+                    <div class="form-check">
+                        <input type="checkbox" id="newsletter" name="newsletter" value="true">
+                        <label for="newsletter">Quero receber ofertas e novidades por email</label>
+                    </div>
+
+                    <div class="form-check">
+                        <input type="checkbox" id="terms-accept" name="terms" required>
+                        <label for="terms-accept">
+                            Concordo com os <a href="#">Termos de Serviço</a> e 
+                            <a href="#">Política de Privacidade</a>
+                        </label>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-full">Criar Conta</button>
+                </form>
+
+                <div class="login-links">
+                    <p>Já tem conta? <a href="login.html">Faça login</a></p>
+                </div>
+
+                <div id="register-message" class="message-box" style="display: none;"></div>
+            </div>
+        </div>
+    </main>
+
+    <!-- FOOTER -->
+    <footer>
+        <div class="footer-container">
+            <div class="footer-section">
+                <h4>Sobre BRAGOON</h4>
+                <p>A loja de confiança para componentes de informática de qualidade.</p>
+            </div>
+            <div class="footer-section">
+                <h4>Links Rápidos</h4>
+                <ul>
+                    <li><a href="sobre.html">Sobre Nós</a></li>
+                    <li><a href="contato.html">Contato</a></li>
+                    <li><a href="#">Política de Privacidade</a></li>
+                    <li><a href="#">Termos de Serviço</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h4>Contato</h4>
+                <p>Email: contato@bragoon.com</p>
+                <p>Telefone: (11) 9999-9999</p>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2026 BRAGOON Store. Todos os direitos reservados.</p>
+        </div>
+    </footer>
+
+    <script src="js/api.js"></script>
+    <script src="js/register.js"></script>
+</body>
+</html>
