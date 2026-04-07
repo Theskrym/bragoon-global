@@ -1,9 +1,5 @@
 # 🚀 Setup Frontend2 com Backend Django
 
-## ✅ O que foi feito
-
-O frontend2 foi totalmente conectado ao backend Django sem quebrar o frontend React. Ambos podem coexistir apontando para o mesmo backend.
-
 ## 📋 Alterações Realizadas
 
 ### 1. **api.js** - Endpoints Atualizados
