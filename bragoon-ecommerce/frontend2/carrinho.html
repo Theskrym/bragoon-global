@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Carrinho - BRAGOON Store</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        .cart-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 30px 20px;
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            gap: 30px;
+        }
+
+        .cart-items {
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .cart-header {
+            background: #667eea;
+            color: white;
+            padding: 20px;
+            font-size: 1.3em;
+            font-weight: bold;
+        }
+
+        .cart-empty {
+            padding: 60px 20px;
+            text-align: center;
+            color: #999;
+        }
+
+        .cart-empty h2 {
+            font-size: 1.5em;
+            color: #667eea;
+            margin-bottom: 20px;
+        }
+
+        .cart-empty p {
+            margin: 10px 0;
+        }
+
+        .btn-continue-shopping {
+            background: #667eea;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            margin-top: 20px;
+            transition: background 0.3s;
+        }
+
+        .btn-continue-shopping:hover {
+            background: #764ba2;
+        }
+
+        .cart-item {
+            display: grid;
+            grid-template-columns: 100px 1fr auto;
+            gap: 20px;
+            padding: 20px;
+            border-bottom: 1px solid #f0f0f0;
+            align-items: center;
+        }
+
+        .cart-item:last-child {
+            border-bottom: none;
+        }
+
+        .cart-item-image {
+            width: 100px;
+            height: 100px;
+            object-fit: cover;
+            border-radius: 5px;
+            background: #f8f9fa;
+        }
+
+        .cart-item-info h3 {
+            margin: 0 0 5px 0;
+            font-size: 1em;
+            color: #333;
+        }
+
+        .cart-item-info .store {
+            font-size: 0.85em;
+            color: #667eea;
+            font-weight: bold;
+            margin: 5px 0;
+        }
+
+        .cart-item-info .price {
+            font-size: 1.1em;
+            color: #333;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+
+        .cart-item-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .quantity-control {
+            display: flex;
+            align-items: center;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            overflow: hidden;
+            background: white;
+        }
+
+        .quantity-control button {
+            background: #f8f9fa;
+            border: none;
+            width: 30px;
+            height: 30px;
+            cursor: pointer;
+            font-weight: bold;
+            color: #667eea;
+            transition: background 0.3s;
+        }
+
+        .quantity-control button:hover {
+            background: #e9ecef;
+        }
+
+        .quantity-control input {
+            width: 40px;
+            border: none;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .btn-remove {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: background 0.3s;
+        }
+
+        .btn-remove:hover {
+            background: #c82333;
+        }
+
+        .btn-visit-store-item {
+            background: transparent;
+            color: #667eea;
+            border: 1px solid #667eea;
+            padding: 8px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9em;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.3s;
+        }
+
+        .btn-visit-store-item:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        /* Sidebar */
+        .cart-sidebar {
+            height: fit-content;
+            position: sticky;
+            top: 20px;
+        }
+
+        .cart-summary {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .cart-summary h3 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .summary-row:last-child {
+            border-bottom: none;
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #667eea;
+            padding: 15px 0;
+            padding-top: 20px;
+        }
+
+        .btn-clear-cart {
+            width: 100%;
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-bottom: 10px;
+            transition: background 0.3s;
+        }
+
+        .btn-clear-cart:hover {
+            background: #5a6268;
+        }
+
+        .btn-checkout {
+            width: 100%;
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.3s;
+        }
+
+        .btn-checkout:hover {
+            background: #218838;
+        }
+
+        .btn-checkout.disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .checkout-info {
+            background: #e7f3f8;
+            border-left: 4px solid #17a2b8;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            font-size: 0.9em;
+            color: #0c5460;
+        }
+
+        @media (max-width: 768px) {
+            .cart-container {
+                grid-template-columns: 1fr;
+            }
+
+            .cart-item {
+                grid-template-columns: 80px 1fr;
+                gap: 15px;
+            }
+
+            .cart-item-actions {
+                grid-column: 1 / -1;
+                justify-content: space-between;
+                margin-top: 10px;
+            }
+
+            .cart-item-image {
+                width: 80px;
+                height: 80px;
+            }
+
+            .cart-sidebar {
+                position: static;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- HEADER -->
+    <header>
+        <nav class="navbar">
+            <div class="navbar-container">
+                <div class="logo">
+                    <h1>🎮 BRAGOON Store</h1>
+                </div>
+                <ul class="nav-menu">
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="produtos.html">Produtos</a></li>
+                    <li><a href="sobre.html">Sobre</a></li>
+                    <li><a href="contato.html">Contato</a></li>
+                    <li><a href="login.html" class="btn-login">Login</a></li>
+                </ul>
+                <div class="cart-icon">
+                    <a href="carrinho.html" style="color: white; text-decoration: none;">🛒 <span id="cart-count">0</span></a>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <!-- MAIN CONTENT -->
+    <main>
+        <div class="cart-container">
+            <!-- Seção de Itens do Carrinho -->
+            <div class="cart-items">
+                <div class="cart-header">
+                    🛒 Meu Carrinho
+                </div>
+
+                <div id="cart-content">
+                    <!-- Será preenchido por JavaScript -->
+                </div>
+            </div>
+
+            <!-- Sidebar de Resumo -->
+            <div class="cart-sidebar">
+                <div class="cart-summary">
+                    <h3>📊 Resumo</h3>
+
+                    <div class="checkout-info">
+                        ℹ️ Aqui você agrega as melhores ofertas. Clique em "Ir para a Loja" para completar a compra!
+                    </div>
+
+                    <div class="summary-row">
+                        <span>Produtos:</span>
+                        <span id="total-items">0</span>
+                    </div>
+
+                    <div class="summary-row">
+                        <span>Quantidade:</span>
+                        <span id="total-quantity">0</span>
+                    </div>
+
+                    <div class="summary-row">
+                        <span>Menor Preço:</span>
+                        <span id="min-price">-</span>
+                    </div>
+
+                    <div class="summary-row">
+                        <span>Maior Preço:</span>
+                        <span id="max-price">-</span>
+                    </div>
+
+                    <div class="summary-row">
+                        <span>Total Estimado:</span>
+                        <span id="total-price">R$ 0,00</span>
+                    </div>
+
+                    <button class="btn-clear-cart" onclick="clearCart()">
+                        🗑️ Limpar Carrinho
+                    </button>
+
+                    <button class="btn-checkout" id="btn-checkout" onclick="checkout()" style="display: none;">
+                        ✓ Confirmar Seleção
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- FOOTER -->
+    <footer>
+        <div class="footer-container">
+            <div class="footer-section">
+                <h4>Sobre BRAGOON</h4>
+                <p>A loja de confiança para componentes de informática de qualidade.</p>
+            </div>
+            <div class="footer-section">
+                <h4>Links Rápidos</h4>
+                <ul>
+                    <li><a href="sobre.html">Sobre Nós</a></li>
+                    <li><a href="contato.html">Contato</a></li>
+                </ul>
+            </div>
+        </div>
+    </footer>
+
+    <script src="js/api.js"></script>
+    <script src="js/navbar.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            updateCartCount();
+            displayCartItems();
+            updateCartSummary();
+        });
+
+        function displayCartItems() {
+            const cart = getCart();
+            const cartContent = document.getElementById('cart-content');
+
+            if (cart.length === 0) {
+                cartContent.innerHTML = `
+                    <div class="cart-empty">
+                        <h2>🛒 Carrinho Vazio</h2>
+                        <p>Você não tem produtos no seu carrinho.</p>
+                        <a href="produtos.html" class="btn-continue-shopping">Continuar Comprando</a>
+                    </div>
+                `;
+                document.getElementById('btn-checkout').style.display = 'none';
+                return;
+            }
+
+            let html = '';
+            cart.forEach((product, index) => {
+                const isUnavailable = parseFloat(product.price) === 0 || product.price === "0,00" || parseFloat(product.price) < 0;
+                html += `
+                    <div class="cart-item">
+                        <img src="${product.image_url || 'https://via.placeholder.com/100'}" alt="${product.name}" class="cart-item-image" onerror="this.src='https://via.placeholder.com/100?text=Sem+Imagem'">
+                        
+                        <div class="cart-item-info">
+                            <h3>${truncateText(product.name, 50)}</h3>
+                            <div class="store">${product.store || 'Loja'}</div>
+                            <div class="price">${isUnavailable ? 'Indisponível' : formatPrice(product.price)}</div>
+                        </div>
+
+                        <div class="cart-item-actions">
+                            <div class="quantity-control">
+                                <button onclick="updateQuantity(${index}, ${product.quantity - 1})">−</button>
+                                <input type="number" value="${product.quantity}" min="1" readonly>
+                                <button onclick="updateQuantity(${index}, ${product.quantity + 1})">+</button>
+                            </div>
+
+                            <a href="${product.affiliate_link || '#'}" target="_blank" class="btn-visit-store-item" ${isUnavailable ? 'style="opacity: 0.5;"' : ''}>
+                                🔗 Loja
+                            </a>
+
+                            <button class="btn-remove" onclick="removeItem(${index})">
+                                ❌ Remover
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+
+            cartContent.innerHTML = html;
+            document.getElementById('btn-checkout').style.display = 'block';
+        }
+
+        function updateQuantity(index, newQuantity) {
+            const cart = getCart();
+            if (newQuantity < 1) {
+                if (confirm('Remover este item do carrinho?')) {
+                    removeItem(index);
+                }
+                return;
+            }
+
+            cart[index].quantity = newQuantity;
+            saveCart(cart);
+            displayCartItems();
+            updateCartSummary();
+        }
+
+        function removeItem(index) {
+            const cart = getCart();
+            const productName = cart[index].name;
+            
+            if (confirm(`Remover "${truncateText(productName, 30)}" do carrinho?`)) {
+                cart.splice(index, 1);
+                saveCart(cart);
+                displayCartItems();
+                updateCartSummary();
+                updateCartCount();
+            }
+        }
+
+        function updateCartSummary() {
+            const cart = getCart();
+
+            const totalItems = cart.length;
+            const totalQuantity = cart.reduce((sum, item) => sum + (item.quantity || 1), 0);
+            
+            let minPrice = Infinity;
+            let maxPrice = 0;
+            let totalPrice = 0;
+
+            cart.forEach(item => {
+                const price = parseFloat(item.price) || 0;
+                if (price > 0) {
+                    minPrice = Math.min(minPrice, price);
+                    maxPrice = Math.max(maxPrice, price);
+                    totalPrice += price * (item.quantity || 1);
+                }
+            });
+
+            document.getElementById('total-items').textContent = totalItems;
+            document.getElementById('total-quantity').textContent = totalQuantity;
+            document.getElementById('min-price').textContent = minPrice === Infinity ? '-' : formatPrice(minPrice);
+            document.getElementById('max-price').textContent = maxPrice === 0 ? '-' : formatPrice(maxPrice);
+            document.getElementById('total-price').textContent = formatPrice(totalPrice);
+        }
+
+        function checkout() {
+            const cart = getCart();
+            if (cart.length === 0) {
+                alert('❌ Seu carrinho está vazio!');
+                return;
+            }
+
+            // Agrupar produtos por loja
+            const byStore = {};
+            cart.forEach(product => {
+                if (!byStore[product.store]) {
+                    byStore[product.store] = [];
+                }
+                byStore[product.store].push(product);
+            });
+
+            // Criar mensagem com resumo
+            let message = '📊 Resumo do Carrinho:\n\n';
+            Object.entries(byStore).forEach(([store, products]) => {
+                message += `🏪 ${store}:\n`;
+                products.forEach(p => {
+                    message += `  • ${truncateText(p.name, 40)} (${p.quantity || 1}x)\n`;
+                });
+                message += '\n';
+            });
+
+            message += '💡 Dica: Cada loja geralmente oferece as mesmas opções de pagamento (cartão, boleto, pix, etc)';
+
+            alert(message);
+        }
+
+        function clearCart() {
+            if (confirm('⚠️ Tem certeza que quer limpar TODO o carrinho?')) {
+                localStorage.removeItem('cart');
+                updateCartCount();
+                displayCartItems();
+                updateCartSummary();
+                alert('✅ Carrinho foi limpo!');
+            }
+        }
+    </script>
+</body>
+</html>

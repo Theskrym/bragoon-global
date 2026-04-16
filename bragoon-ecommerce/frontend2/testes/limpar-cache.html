@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Limpar Cache - BRAGOON Store</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            max-width: 600px;
+            text-align: center;
+        }
+        h1 {
+            color: #333;
+            margin-top: 0;
+        }
+        .status {
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        button {
+            padding: 12px 30px;
+            margin: 10px 5px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #764ba2;
+        }
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 15px;
+            max-height: 300px;
+            overflow-y: auto;
+            text-align: left;
+            margin: 20px 0;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .log-item {
+            margin: 5px 0;
+            padding: 5px;
+        }
+        .log-item.success {
+            color: #28a745;
+        }
+        .log-item.error {
+            color: #dc3545;
+        }
+        .log-item.info {
+            color: #17a2b8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧹 Limpar Cache e Storage</h1>
+        <div class="status info">
+            Essa página vai limpar localStorage, sessionStorage e cache do navegador
+        </div>
+        
+        <button class="btn-primary" onclick="limparTudo()">
+            Limpar Tudo e Recarregar
+        </button>
+        <button class="btn-secondary" onclick="location.href='../index.html'">
+            Voltar para Home
+        </button>
+        
+        <div class="log" id="log"></div>
+    </div>
+
+    <script>
+        const log = document.getElementById('log');
+
+        function addLog(message, type = 'info') {
+            const item = document.createElement('div');
+            item.className = `log-item ${type}`;
+            item.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            log.appendChild(item);
+            log.scrollTop = log.scrollHeight;
+            console.log(`[${type.toUpperCase()}] ${message}`);
+        }
+
+        async function limparTudo() {
+            addLog('🚀 Iniciando limpeza...', 'info');
+
+            try {
+                // 1. Limpar localStorage
+                addLog('Limpando localStorage...', 'info');
+                try {
+                    localStorage.clear();
+                    addLog('✅ localStorage limpo', 'success');
+                } catch (e) {
+                    addLog('⚠️ Erro ao limpar localStorage: ' + e.message, 'error');
+                }
+
+                // 2. Limpar sessionStorage
+                addLog('Limpando sessionStorage...', 'info');
+                try {
+                    sessionStorage.clear();
+                    addLog('✅ sessionStorage limpo', 'success');
+                } catch (e) {
+                    addLog('⚠️ Erro ao limpar sessionStorage: ' + e.message, 'error');
+                }
+
+                // 3. Limpar cookies
+                addLog('Limpando cookies...', 'info');
+                try {
+                    document.cookie.split(";").forEach(function(c) {
+                        document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+                    });
+                    addLog('✅ Cookies limpos', 'success');
+                } catch (e) {
+                    addLog('⚠️ Erro ao limpar cookies: ' + e.message, 'error');
+                }
+
+                // 4. Limpar IndexedDB
+                addLog('Limpando IndexedDB...', 'info');
+                try {
+                    const dbs = await indexedDB.databases();
+                    for (const db of dbs) {
+                        indexedDB.deleteDatabase(db.name);
+                    }
+                    addLog('✅ IndexedDB limpo', 'success');
+                } catch (e) {
+                    addLog('⚠️ Erro ao limpar IndexedDB: ' + e.message, 'error');
+                }
+
+                // 5. Aguardar e recarregar
+                addLog('🔄 Recarregando página em 2 segundos...', 'info');
+                setTimeout(() => {
+                    if ('caches' in window) {
+                        caches.keys().then(names => {
+                            names.forEach(name => caches.delete(name));
+                        });
+                    }
+                    // Recarregar com limpeza de cache
+                    window.location.href = 'index.html?cache-cleared=' + Date.now();
+                }, 2000);
+
+            } catch (error) {
+                addLog('❌ Erro geral: ' + error.message, 'error');
+            }
+        }
+
+        // Log inicial
+        addLog('Página de limpeza carregada com sucesso', 'success');
+        addLog('localStorage size: ' + (localStorage.length + ' items'), 'info');
+        addLog('sessionStorage size: ' + (sessionStorage.length + ' items'), 'info');
+    </script>
+</body>
+</html>

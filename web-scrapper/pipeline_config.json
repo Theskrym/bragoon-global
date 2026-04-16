@@ -1,0 +1,8 @@
+{
+  "0_teste": true,
+  "0_teste_colors": true,
+  "1_scraper": true,
+  "2_classifier": false,
+  "3_classifier_ml": false,
+  "4_html_generator": false
+}

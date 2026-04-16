@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detalhes do Produto - BRAGOON Store</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        .product-detail-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 30px 20px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            align-items: start;
+        }
+
+        .product-image-section {
+            text-align: center;
+        }
+
+        .product-image-section img {
+            width: 100%;
+            max-width: 400px;
+            height: auto;
+            border-radius: 10px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .product-info-section h1 {
+            font-size: 2em;
+            color: #333;
+            margin: 20px 0;
+        }
+
+        .rating-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.1em;
+            margin: 15px 0;
+        }
+
+        .rating-info .stars {
+            color: #ffc107;
+        }
+
+        .rating-info .review-count {
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .price-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+
+        .price-section .current-price {
+            font-size: 2em;
+            color: #667eea;
+            font-weight: bold;
+        }
+
+        .store-badge {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+
+        .unavailable-alert {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+            display: none;
+        }
+
+        .unavailable-alert.show {
+            display: block;
+        }
+
+        .action-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin: 30px 0;
+        }
+
+        .btn-add-cart {
+            background: #667eea;
+            color: white;
+            padding: 15px;
+            border: none;
+            border-radius: 5px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .btn-add-cart:hover {
+            background: #764ba2;
+        }
+
+        .btn-add-cart:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .btn-visit-store {
+            background: transparent;
+            color: #667eea;
+            padding: 15px;
+            border: 2px solid #667eea;
+            border-radius: 5px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+        }
+
+        .btn-visit-store:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        .product-meta {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+
+        .meta-item {
+            display: grid;
+            grid-template-columns: 150px 1fr;
+            margin: 15px 0;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .meta-item:last-child {
+            border-bottom: none;
+        }
+
+        .meta-item span {
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .meta-item strong {
+            color: #333;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: #667eea;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .back-link:hover {
+            text-decoration: underline;
+        }
+
+        .success-message {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+            display: none;
+            border: 1px solid #c3e6cb;
+        }
+
+        .success-message.show {
+            display: block;
+        }
+
+        @media (max-width: 768px) {
+            .product-detail-container {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+
+            .action-buttons {
+                grid-template-columns: 1fr;
+            }
+
+            .product-info-section h1 {
+                font-size: 1.5em;
+            }
+
+            .price-section .current-price {
+                font-size: 1.5em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- HEADER -->
+    <header>
+        <nav class="navbar">
+            <div class="navbar-container">
+                <div class="logo">
+                    <h1>🎮 BRAGOON Store</h1>
+                </div>
+                <ul class="nav-menu">
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="produtos.html">Produtos</a></li>
+                    <li><a href="sobre.html">Sobre</a></li>
+                    <li><a href="contato.html">Contato</a></li>
+                    <li><a href="login.html" class="btn-login">Login</a></li>
+                </ul>
+                <div class="cart-icon">
+                    <a href="carrinho.html" style="color: white; text-decoration: none;">🛒 <span id="cart-count">0</span></a>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <!-- MAIN CONTENT -->
+    <main>
+        <a href="produtos.html" class="back-link">← Voltar para Produtos</a>
+
+        <div id="loading" class="loading" style="display: none;">
+            <div class="spinner"></div>Carregando produto...
+        </div>
+
+        <div id="error-message" class="error-message" style="display: none;"></div>
+        <div id="success-message" class="success-message"></div>
+
+        <div id="product-detail" class="product-detail-container" style="display: none;">
+            <!-- Lado Esquerdo: Imagem -->
+            <div class="product-image-section">
+                <img id="product-image" src="" alt="Produto" onerror="this.src='https://via.placeholder.com/400x400?text=Sem+Imagem'">
+            </div>
+
+            <!-- Lado Direito: Informações -->
+            <div class="product-info-section">
+                <h1 id="product-name"></h1>
+
+                <!-- Rating -->
+                <div class="rating-info">
+                    <span class="stars" id="product-rating"></span>
+                    <span class="review-count" id="product-reviews"></span>
+                </div>
+
+                <!-- Alerta de Indisponibilidade -->
+                <div id="unavailable-alert" class="unavailable-alert">
+                    ⚠️ Produto atualmente indisponível nesta loja
+                </div>
+
+                <!-- Preço -->
+                <div class="price-section">
+                    <div class="current-price" id="product-price"></div>
+                    <div class="store-badge" id="product-store"></div>
+                </div>
+
+                <!-- Botões de Ação -->
+                <div class="action-buttons">
+                    <button class="btn-add-cart" id="btn-add-cart" onclick="addToCartFromDetail()">
+                        🛒 Adicionar ao Carrinho
+                    </button>
+                    <a class="btn-visit-store" id="btn-visit-store" target="_blank" rel="noopener noreferrer">
+                        🔗 Ir para a Loja
+                    </a>
+                </div>
+
+                <!-- Metadados -->
+                <div class="product-meta">
+                    <div class="meta-item">
+                        <span>Categoria:</span>
+                        <strong id="product-menu"></strong>
+                    </div>
+                    <div class="meta-item">
+                        <span>Tipo:</span>
+                        <strong id="product-type"></strong>
+                    </div>
+                    <div class="meta-item">
+                        <span>ID do Produto:</span>
+                        <strong id="product-id"></strong>
+                    </div>
+                    <div class="meta-item">
+                        <span>Filtro:</span>
+                        <strong id="product-filter"></strong>
+                    </div>
+                    <div class="meta-item">
+                        <span>Sub-filtro:</span>
+                        <strong id="product-subfilter"></strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- FOOTER -->
+    <footer>
+        <div class="footer-container">
+            <div class="footer-section">
+                <h4>Sobre BRAGOON</h4>
+                <p>A loja de confiança para componentes de informática de qualidade.</p>
+            </div>
+            <div class="footer-section">
+                <h4>Links Rápidos</h4>
+                <ul>
+                    <li><a href="sobre.html">Sobre Nós</a></li>
+                    <li><a href="contato.html">Contato</a></li>
+                </ul>
+            </div>
+        </div>
+    </footer>
+
+    <script src="js/api.js"></script>
+    <script src="js/navbar.js"></script>
+    <script>
+        let currentProduct = null;
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            updateCartCount();
+            await loadProductDetail();
+        });
+
+        async function loadProductDetail() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const productId = urlParams.get('id');
+
+            if (!productId) {
+                showError('❌ Nenhum produto especificado');
+                return;
+            }
+
+            showLoading(true);
+
+            try {
+                const result = await getProductDetail(productId);
+
+                if (result.success && result.data) {
+                    currentProduct = result.data;
+                    displayProductDetail(currentProduct);
+                } else {
+                    showError('❌ Produto não encontrado: ' + result.error);
+                }
+            } catch (error) {
+                console.error('Erro ao carregar produto:', error);
+                showError('❌ Erro ao carregar produto: ' + error.message);
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        function displayProductDetail(product) {
+            const isUnavailable = parseFloat(product.price) === 0 || product.price === "0,00" || parseFloat(product.price) < 0;
+
+            // Preencher dados
+            document.getElementById('product-image').src = product.image_url || 'https://via.placeholder.com/400x400?text=Sem+Imagem';
+            document.getElementById('product-name').textContent = product.name;
+            document.getElementById('product-price').textContent = isUnavailable ? 'Indisponível' : formatPrice(product.price);
+            document.getElementById('product-store').textContent = product.store || 'Loja não especificada';
+            document.getElementById('product-id').textContent = product.product_ID;
+            document.getElementById('product-menu').textContent = product.menu || '-';
+            document.getElementById('product-type').textContent = product.type || '-';
+            document.getElementById('product-filter').textContent = product.filter || '-';
+            document.getElementById('product-subfilter').textContent = product.subfilter || '-';
+
+            // Rating
+            const rating = parseFloat(product.rating) || 0;
+            const reviewCount = product.review_count || 0;
+            document.getElementById('product-rating').textContent = '★'.repeat(Math.round(rating)) + '☆'.repeat(5 - Math.round(rating)) + ` ${rating.toFixed(1)}`;
+            document.getElementById('product-reviews').textContent = `${reviewCount} avaliações`;
+
+            // Alerta de indisponibilidade
+            const unavailableAlert = document.getElementById('unavailable-alert');
+            if (isUnavailable) {
+                unavailableAlert.classList.add('show');
+            } else {
+                unavailableAlert.classList.remove('show');
+            }
+
+            // Botão de loja
+            const btnVisitStore = document.getElementById('btn-visit-store');
+            btnVisitStore.href = product.affiliate_link || '#';
+            btnVisitStore.style.opacity = isUnavailable ? '0.5' : '1';
+
+            // Botão de carrinho
+            const btnAddCart = document.getElementById('btn-add-cart');
+            btnAddCart.disabled = isUnavailable;
+            btnAddCart.textContent = isUnavailable ? '❌ Indisponível' : '🛒 Adicionar ao Carrinho';
+
+            // Mostrar detalhe
+            document.getElementById('product-detail').style.display = 'grid';
+        }
+
+        function addToCartFromDetail() {
+            if (!currentProduct) return;
+
+            const isAdded = addToCart(currentProduct);
+            if (isAdded) {
+                showSuccess(`✅ "${currentProduct.name}" foi adicionado ao carrinho!`);
+                updateCartCount();
+            }
+        }
+
+        function showLoading(show) {
+            document.getElementById('loading').style.display = show ? 'flex' : 'none';
+        }
+
+        function showError(message) {
+            const errorBox = document.getElementById('error-message');
+            errorBox.textContent = message;
+            errorBox.style.display = 'block';
+            document.getElementById('product-detail').style.display = 'none';
+        }
+
+        function showSuccess(message) {
+            const successBox = document.getElementById('success-message');
+            successBox.textContent = message;
+            successBox.classList.add('show');
+            setTimeout(() => {
+                successBox.classList.remove('show');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

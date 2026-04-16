@@ -1,0 +1,16 @@
+# Dependências adicionais para GUI (tkinter vem com Python)
+# As demais já estão em requirements.txt
+
+# tkinter é nativo em Python (sudo apt-get install python3-tk no Linux/WSL)
+# No Windows está incluído no instalador Python
+
+# Execute: pip install -r gui_requirements.txt
+
+# Dependências principais (já em requirements.txt original)
+pandas>=1.5.0
+openpyxl>=3.0.0  # Para salvar em Excel (.xlsx)
+selenium>=4.0.0
+jinja2>=3.0.0
+scikit-learn>=1.0.0
+flask>=2.0.0
+requests>=2.25.0

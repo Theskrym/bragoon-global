@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Produtos - BRAGOON Store</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <!-- HEADER -->
+    <header>
+        <nav class="navbar">
+            <div class="navbar-container">
+                <div class="logo">
+                    <h1>🎮 BRAGOON Store</h1>
+                </div>
+                <ul class="nav-menu">
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="produtos.html" class="active">Produtos</a></li>
+                    <li><a href="sobre.html">Sobre</a></li>
+                    <li><a href="contato.html">Contato</a></li>
+                    <li><a href="login.html" class="btn-login">Login</a></li>
+                </ul>
+                <div class="cart-icon">
+                    <span>🛒 <span id="cart-count">0</span></span>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <!-- MAIN CONTENT -->
+    <main>
+        <div class="products-page">
+            <!-- SIDEBAR FILTERS -->
+            <aside class="sidebar-filters">
+                <h3>🔍 Filtros</h3>
+
+                <!-- SEARCH -->
+                <div class="filter-group">
+                    <label for="search">Buscar</label>
+                    <input 
+                        type="text" 
+                        id="search" 
+                        placeholder="Nome do produto..." 
+                        onkeyup="applyFilters()"
+                    >
+                </div>
+
+                <!-- SORT -->
+                <div class="filter-group">
+                    <label for="sort">Ordenar por</label>
+                    <select id="sort" onchange="applyFilters()">
+                        <option value="price_asc">Menor Preço</option>
+                        <option value="price_desc">Maior Preço</option>
+                        <option value="rating_desc">Melhor Avaliação</option>
+                        <option value="newest">Mais Recentes</option>
+                    </select>
+                </div>
+
+                <!-- CATEGORY FILTER -->
+                <div class="filter-group">
+                    <label for="menu-select">Categoria</label>
+                    <select id="menu-select">
+                        <option value="">Todas</option>
+                    </select>
+                </div>
+
+                <!-- TYPE FILTER -->
+                <div class="filter-group">
+                    <label for="type-select">Tipo</label>
+                    <select id="type-select" onchange="handleTypeChange()">
+                        <option value="">-- Selecione Tipo --</option>
+                    </select>
+                </div>
+
+                <!-- FILTER -->
+                <div class="filter-group">
+                    <label for="filter-select">Filtro</label>
+                    <select id="filter-select" onchange="handleFilterChange()">
+                        <option value="">-- Selecione Filtro --</option>
+                    </select>
+                </div>
+
+                <!-- SUBFILTER -->
+                <div class="filter-group" id="subfilter-group" style="display: none;">
+                    <label for="subfilter-select">Subfiltro</label>
+                    <select id="subfilter-select" onchange="applyFilters()">
+                        <option value="">-- Selecione Subfiltro --</option>
+                    </select>
+                </div>
+
+                <!-- STORE FILTER -->
+                <div class="filter-group">
+                    <label for="store-select">Loja</label>
+                    <select id="store-select" onchange="applyFilters()">
+                        <option value="">Todas</option>
+                    </select>
+                </div>
+
+                <!-- PRICE FILTER -->
+                <div class="filter-group">
+                    <label for="price-range">Preço Máximo: R$ <span id="price-value">10000</span></label>
+                    <input 
+                        type="range" 
+                        id="price-range" 
+                        min="0" 
+                        max="10000" 
+                        step="100" 
+                        value="10000" 
+                        onchange="applyFilters()"
+                    >
+                </div>
+
+                <button class="btn btn-secondary" onclick="resetFilters()" style="width: 100%; margin-top: 15px;">
+                    Limpar Filtros
+                </button>
+            </aside>
+
+            <!-- PRODUCTS SECTION -->
+            <section class="products-section">
+                <!-- PRODUCTS GRID -->
+                <div class="products-grid" id="products-grid">
+                    <p class="loading">Carregando produtos...</p>
+                </div>
+
+                <!-- PAGINATION -->
+                <div class="pagination" id="pagination">
+                    <!-- Será preenchido por JavaScript -->
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- MODAL PARA CARRINHO -->
+    <div id="cart-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <button class="close-modal" onclick="closeCartModal()">&times;</button>
+            <h2>Adicionado ao Carrinho!</h2>
+            <p id="modal-message"></p>
+            <div class="modal-buttons">
+                <button class="btn btn-primary" onclick="closeCartModal()">Continuar Comprando</button>
+                <button class="btn btn-secondary" onclick="viewCart()">Ver Carrinho</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- FOOTER -->
+    <footer>
+        <div class="footer-container">
+            <div class="footer-section">
+                <h4>Sobre BRAGOON</h4>
+                <p>A loja de confiança para componentes de informática de qualidade.</p>
+            </div>
+            <div class="footer-section">
+                <h4>Links Rápidos</h4>
+                <ul>
+                    <li><a href="sobre.html">Sobre Nós</a></li>
+                    <li><a href="contato.html">Contato</a></li>
+                    <li><a href="#">Política de Privacidade</a></li>
+                    <li><a href="#">Termos de Serviço</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h4>Contato</h4>
+                <p>Email: contato@bragoon.com</p>
+                <p>Telefone: (11) 9999-9999</p>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2026 BRAGOON Store. Todos os direitos reservados.</p>
+        </div>
+    </footer>
+
+    <script src="js/api.js"></script>
+    <script src="js/navbar.js"></script>
+    <script src="js/products.js"></script>
+</body>
+</html>

@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verificação de Saúde - BRAGOON Store</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+        }
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+        }
+        .checks {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+        }
+        .check {
+            padding: 15px;
+            border-radius: 5px;
+            border-left: 4px solid #ddd;
+            background: #f8f9fa;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .check.checking {
+            border-left-color: #ffc107;
+            background: #fffbf0;
+        }
+        .check.success {
+            border-left-color: #28a745;
+            background: #f0f9ff;
+        }
+        .check.error {
+            border-left-color: #dc3545;
+            background: #fff5f5;
+        }
+        .check-icon {
+            font-size: 20px;
+            min-width: 25px;
+            text-align: center;
+        }
+        .check-content {
+            flex: 1;
+        }
+        .check-title {
+            font-weight: bold;
+            color: #333;
+        }
+        .check-message {
+            font-size: 0.9em;
+            color: #666;
+            margin-top: 3px;
+        }
+        .summary {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 5px;
+            border-left: 4px solid #667eea;
+        }
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #ddd;
+        }
+        .summary-row:last-child {
+            border-bottom: none;
+        }
+        .btn {
+            padding: 12px 24px;
+            margin-top: 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #764ba2;
+        }
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        .btn-success:hover {
+            background: #218838;
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏥 Verificação de Saúde do Sistema</h1>
+        <p class="subtitle">Testando conectividade e configurações...</p>
+
+        <div class="checks" id="checks"></div>
+
+        <div class="summary" id="summary" style="display: none;">
+            <div class="summary-row">
+                <span>✅ Verificações Bem-Sucedidas:</span>
+                <strong id="success-count">0</strong>
+            </div>
+            <div class="summary-row">
+                <span>⚠️ Avisos/Problemas:</span>
+                <strong id="warn-count">0</strong>
+            </div>
+            <div class="summary-row">
+                <span>❌ Erros:</span>
+                <strong id="error-count">0</strong>
+            </div>
+        </div>
+
+        <button class="btn btn-primary" onclick="runChecks()">🔄 Executar Testes Novamente</button>
+        <button class="btn btn-success" onclick="location.href='../index.html'" id="continue-btn" style="display: none;">➡️ Ir para Home</button>
+    </div>
+
+    <script src="../js/api.js"></script>
+    <script>
+        let checks = {
+            success: 0,
+            warn: 0,
+            error: 0
+        };
+
+        function addCheck(id, title, message, status = 'checking') {
+            const checksDiv = document.getElementById('checks');
+            let check = document.getElementById('check-' + id);
+            
+            if (!check) {
+                check = document.createElement('div');
+                check.id = 'check-' + id;
+                check.className = 'check ' + status;
+                checksDiv.appendChild(check);
+            } else {
+                check.className = 'check ' + status;
+            }
+
+            const icons = {
+                'checking': '⏳',
+                'success': '✅',
+                'error': '❌',
+                'warn': '⚠️'
+            };
+
+            check.innerHTML = `
+                <div class="check-icon">${icons[status]}</div>
+                <div class="check-content">
+                    <div class="check-title">${title}</div>
+                    <div class="check-message">${message}</div>
+                </div>
+            `;
+
+            if (status === 'success') checks.success++;
+            else if (status === 'error') checks.error++;
+            else if (status === 'warn') checks.warn++;
+
+            return check;
+        }
+
+        async function runChecks() {
+            checks = { success: 0, warn: 0, error: 0 };
+            document.getElementById('checks').innerHTML = '';
+            document.getElementById('summary').style.display = 'none';
+            document.getElementById('continue-btn').style.display = 'none';
+
+            // Check 1: API URL
+            addCheck('api-url', 'Configuração da API', 'Verificando...', 'checking');
+            try {
+                if (typeof API_BASE_URL !== 'undefined' && API_BASE_URL.includes(':8000')) {
+                    addCheck('api-url', 'Configuração da API', `${API_BASE_URL}`, 'success');
+                } else {
+                    addCheck('api-url', 'Configuração da API', `${API_BASE_URL || 'não definida'}`, 'error');
+                }
+            } catch (e) {
+                addCheck('api-url', 'Configuração da API', 'Erro ao verificar: ' + e.message, 'error');
+            }
+
+            // Check 2: localStorage
+            addCheck('storage', 'LocalStorage', 'Verificando...', 'checking');
+            try {
+                const test = '__health_check_' + Date.now();
+                localStorage.setItem(test, 'ok');
+                localStorage.removeItem(test);
+                addCheck('storage', 'LocalStorage', 'Funcionando corretamente', 'success');
+            } catch (e) {
+                addCheck('storage', 'LocalStorage', 'Erro: ' + e.message, 'error');
+            }
+
+            // Check 3: Conectividade
+            addCheck('backend', 'Conectividade com Backend', 'Testando...', 'checking');
+            try {
+                const response = await fetch(`${API_BASE_URL}/products/?limit=1`, { method: 'GET' });
+                if (response.ok) {
+                    addCheck('backend', 'Conectividade com Backend', 'Backend respondendo ✓', 'success');
+                } else {
+                    addCheck('backend', 'Conectividade com Backend', `Status: ${response.status}`, 'warn');
+                }
+            } catch (e) {
+                addCheck('backend', 'Conectividade com Backend', 'Erro: ' + e.message, 'error');
+            }
+
+            // Check 4: Filtros
+            addCheck('filters', 'Dados de Filtros', 'Carregando...', 'checking');
+            try {
+                const result = await getFilterOptions();
+                if (result.success && result.data) {
+                    const menus = result.data.menus?.length || 0;
+                    const stores = result.data.stores?.length || 0;
+                    addCheck('filters', 'Dados de Filtros', `${menus} categorias, ${stores} lojas`, 'success');
+                } else {
+                    addCheck('filters', 'Dados de Filtros', 'Não conseguiu carregar', 'error');
+                }
+            } catch (e) {
+                addCheck('filters', 'Dados de Filtros', 'Erro: ' + e.message, 'error');
+            }
+
+            // Check 5: Produtos
+            addCheck('products', 'Produtos', 'Carregando...', 'checking');
+            try {
+                const result = await searchProducts({ page: 1, limit: 1 });
+                if (result.success && result.data && result.data.products) {
+                    const count = result.data.products.length;
+                    addCheck('products', 'Produtos', `${count} produto(s) carregado(s)`, 'success');
+                } else {
+                    addCheck('products', 'Produtos', 'Nenhum produto retornado', 'warn');
+                }
+            } catch (e) {
+                addCheck('products', 'Produtos', 'Erro: ' + e.message, 'error');
+            }
+
+            // Show summary
+            setTimeout(() => {
+                document.getElementById('summary').style.display = 'block';
+                document.getElementById('success-count').textContent = checks.success;
+                document.getElementById('warn-count').textContent = checks.warn;
+                document.getElementById('error-count').textContent = checks.error;
+
+                if (checks.error === 0) {
+                    document.getElementById('continue-btn').style.display = 'inline-block';
+                }
+            }, 500);
+        }
+
+        // Auto-run on load
+        document.addEventListener('DOMContentLoaded', runChecks);
+    </script>
+</body>
+</html>

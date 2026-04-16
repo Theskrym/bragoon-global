@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BRAGOON Store - Loja de Componentes</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <!-- HEADER -->
+    <header>
+        <nav class="navbar">
+            <div class="navbar-container">
+                <div class="logo">
+                    <h1>🎮 BRAGOON Store</h1>
+                </div>
+                <ul class="nav-menu">
+                    <li><a href="index.html" class="active">Home</a></li>
+                    <li><a href="produtos.html">Produtos</a></li>
+                    <li><a href="sobre.html">Sobre</a></li>
+                    <li><a href="contato.html">Contato</a></li>
+                    <li><a href="login.html" class="btn-login">Login</a></li>
+                </ul>
+                <div class="cart-icon">
+                    <a href="carrinho.html" style="color: white; text-decoration: none;">🛒 <span id="cart-count">0</span></a>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <!-- MAIN CONTENT -->
+    <main>
+        <!-- HERO SECTION -->
+        <section class="hero">
+            <div class="hero-content">
+                <h1>Bem-vindo à BRAGOON Store</h1>
+                <p>Os melhores componentes de informática com os melhores preços</p>
+                <a href="produtos.html" class="btn btn-primary">Ver Produtos</a>
+            </div>
+        </section>
+
+        <!-- FEATURED PRODUCTS SECTION -->
+        <section class="featured-products">
+            <div class="container">
+                <h2>Produtos em Destaque</h2>
+                <div class="products-grid" id="featured-products">
+                    <p>Carregando produtos...</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- INFO SECTION -->
+        <section class="info-section">
+            <div class="container">
+                <div class="info-grid">
+                    <article class="info-card">
+                        <h3>📦 Entrega Rápida</h3>
+                        <p>Entrega em até 3 dias úteis para todo Brasil</p>
+                    </article>
+                    <article class="info-card">
+                        <h3>💰 Melhor Preço</h3>
+                        <p>Garantia de melhor preço ou devolvemos a diferença</p>
+                    </article>
+                    <article class="info-card">
+                        <h3>🔒 Segurança</h3>
+                        <p>Compra 100% segura com criptografia SSL</p>
+                    </article>
+                    <article class="info-card">
+                        <h3>🎁 Promoções</h3>
+                        <p>Descontos especiais e ofertas exclusivas todo dia</p>
+                    </article>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- FOOTER -->
+    <footer>
+        <div class="footer-container">
+            <div class="footer-section">
+                <h4>Sobre BRAGOON</h4>
+                <p>A loja de confiança para componentes de informática de qualidade.</p>
+            </div>
+            <div class="footer-section">
+                <h4>Links Rápidos</h4>
+                <ul>
+                    <li><a href="sobre.html">Sobre Nós</a></li>
+                    <li><a href="contato.html">Contato</a></li>
+                    <li><a href="#">Política de Privacidade</a></li>
+                    <li><a href="#">Termos de Serviço</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h4>Contato</h4>
+                <p>Email: contato@bragoon.com</p>
+                <p>Telefone: (11) 9999-9999</p>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2026 BRAGOON Store. Todos os direitos reservados.</p>
+        </div>
+    </footer>
+
+    <script src="js/api.js"></script>
+    <script src="js/navbar.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>

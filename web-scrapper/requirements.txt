@@ -1,0 +1,15 @@
+# Dependências do Web Scraper BRAGOON
+
+# Web Scraping
+selenium>=4.0.0
+requests>=2.25.0
+
+# Data Processing
+pandas>=1.5.0
+openpyxl>=3.0.0
+
+# Utilities
+jinja2>=3.0.0
+
+# Optional: Machine Learning (for name_classifier.py)
+scikit-learn>=1.0.0

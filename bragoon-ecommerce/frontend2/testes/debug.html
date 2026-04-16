@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug - BRAGOON Frontend2</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .section {
+            margin: 30px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            border-radius: 5px;
+        }
+
+        .section h2 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+
+        .test-button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px 5px 10px 0;
+            font-size: 0.95em;
+            transition: all 0.3s;
+        }
+
+        .test-button:hover {
+            background: #764ba2;
+            transform: translateY(-2px);
+        }
+
+        .result {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 10px 0;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        .success {
+            border-left: 4px solid #28a745;
+            background: #f0f9ff;
+        }
+
+        .error {
+            border-left: 4px solid #dc3545;
+            background: #fff0f0;
+        }
+
+        .info {
+            border-left: 4px solid #17a2b8;
+            background: #e7f3f8;
+        }
+
+        .loading {
+            color: #666;
+            font-style: italic;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 10px 0;
+        }
+
+        th, td {
+            text-align: left;
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background: #667eea;
+            color: white;
+            font-weight: bold;
+        }
+
+        tr:hover {
+            background: #f5f5f5;
+        }
+
+        .status-ok {
+            color: #28a745;
+            font-weight: bold;
+        }
+
+        .status-error {
+            color: #dc3545;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Debug - BRAGOON Frontend2</h1>
+
+        <!-- INFO GERAL -->
+        <div class="section">
+            <h2>📌 Informações do Sistema</h2>
+            <table>
+                <tr>
+                    <th>Propriedade</th>
+                    <th>Valor</th>
+                </tr>
+                <tr>
+                    <td>Hostname</td>
+                    <td id="hostname">-</td>
+                </tr>
+                <tr>
+                    <td>Protocol</td>
+                    <td id="protocol">-</td>
+                </tr>
+                <tr>
+                    <td>URL Base (API)</td>
+                    <td id="api-url">-</td>
+                </tr>
+                <tr>
+                    <td>LocalStorage Disponível</td>
+                    <td id="storage">-</td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- TESTES DE CONEXÃO -->
+        <div class="section">
+            <h2>🌐 Testes de Conexão</h2>
+            <button class="test-button" onclick="testAPI()">Testar Conexão com Backend</button>
+            <button class="test-button" onclick="testFilterOptions()">Testar Filtros</button>
+            <button class="test-button" onclick="testProducts()">Testar Produtos</button>
+            <div id="connection-result"></div>
+        </div>
+
+        <!-- ESTADO DE AUTENTICAÇÃO -->
+        <div class="section">
+            <h2>🔐 Estado de Autenticação</h2>
+            <table>
+                <tr>
+                    <th>Item</th>
+                    <th>Valor</th>
+                </tr>
+                <tr>
+                    <td>Token Armazenado</td>
+                    <td id="token-status">-</td>
+                </tr>
+                <tr>
+                    <td>Usuário Armazenado</td>
+                    <td id="user-status">-</td>
+                </tr>
+                <tr>
+                    <td>Carrinho Items</td>
+                    <td id="cart-status">-</td>
+                </tr>
+            </table>
+            <button class="test-button" onclick="clearAllStorage()">🗑️ Limpar LocalStorage</button>
+        </div>
+
+        <!-- LOCALSTORAGE CONTEÚDO -->
+        <div class="section">
+            <h2>💾 Conteúdo do LocalStorage</h2>
+            <button class="test-button" onclick="showStorage()">Mostrar Tudo</button>
+            <div id="storage-content"></div>
+        </div>
+
+        <!-- CONSOLE LOG -->
+        <div class="section">
+            <h2>📋 Console Log (Últimas Mensagens)</h2>
+            <div id="console-log" class="result info"></div>
+            <button class="test-button" onclick="clearConsoleLog()">Limpar Log</button>
+        </div>
+    </div>
+
+    <script src="../js/api.js"></script>
+    <script>
+        // Capturar console.log
+        const consoleLogs = [];
+        const maxLogs = 50;
+        
+        const originalLog = console.log;
+        console.log = function(...args) {
+            originalLog(...args);
+            const message = args.map(arg => {
+                if (typeof arg === 'object') {
+                    return JSON.stringify(arg, null, 2);
+                }
+                return String(arg);
+            }).join(' ');
+            consoleLogs.unshift(new Date().toLocaleTimeString() + ': ' + message);
+            if (consoleLogs.length > maxLogs) consoleLogs.pop();
+            updateConsoleLog();
+        };
+
+        const originalError = console.error;
+        console.error = function(...args) {
+            originalError(...args);
+            const message = '❌ ERROR: ' + args.map(arg => {
+                if (typeof arg === 'object') {
+                    return JSON.stringify(arg, null, 2);
+                }
+                return String(arg);
+            }).join(' ');
+            consoleLogs.unshift(new Date().toLocaleTimeString() + ': ' + message);
+            if (consoleLogs.length > maxLogs) consoleLogs.pop();
+            updateConsoleLog();
+        };
+
+        function updateConsoleLog() {
+            document.getElementById('console-log').textContent = consoleLogs.join('\n');
+        }
+
+        function clearConsoleLog() {
+            consoleLogs.length = 0;
+            updateConsoleLog();
+        }
+
+        // Inicializar Informações do Sistema
+        function initSystemInfo() {
+            try {
+                const apiUrl = typeof API_BASE_URL !== 'undefined' ? API_BASE_URL : 'Não carregado (erro no api.js)';
+                document.getElementById('hostname').textContent = window.location.hostname || '(vazio - arquivo local)';
+                document.getElementById('protocol').textContent = window.location.protocol;
+                document.getElementById('api-url').textContent = apiUrl;
+                document.getElementById('storage').textContent = typeof(Storage) !== 'undefined' ? '✅ Sim' : '❌ Não';
+            } catch (e) {
+                console.error('Erro ao inicializar info:', e);
+                document.getElementById('api-url').textContent = '❌ ERRO: ' + e.message;
+            }
+        }
+
+        // Atualizar Status de Autenticação
+        function updateAuthStatus() {
+            const token = localStorage.getItem('authToken');
+            const user = localStorage.getItem('user');
+            const cart = localStorage.getItem('cart');
+
+            document.getElementById('token-status').textContent = token ? '✅ ' + token.substring(0, 20) + '...' : '❌ Nenhum';
+            document.getElementById('user-status').textContent = user ? '✅ ' + user : '❌ Nenhum';
+            
+            if (cart) {
+                try {
+                    const cartData = JSON.parse(cart);
+                    document.getElementById('cart-status').textContent = '✅ ' + cartData.length + ' items';
+                } catch {
+                    document.getElementById('cart-status').textContent = '❌ Inválido';
+                }
+            } else {
+                document.getElementById('cart-status').textContent = '❌ Vazio';
+            }
+        }
+
+        // Testes de API
+        async function testAPI() {
+            const result = document.getElementById('connection-result');
+            result.className = 'result loading';
+            result.textContent = '⏳ Testando conexão...';
+
+            try {
+                const baseUrl = 'http://localhost:8000';
+                console.log('🧪 Testando: ' + baseUrl + '/api/products/?limit=1');
+                const response = await fetch(baseUrl + '/api/products/?limit=1');
+                if (response.ok) {
+                    const data = await response.json();
+                    result.className = 'result success';
+                    result.textContent = '✅ SUCESSO!\n\nBackend está respondendo:\n' + JSON.stringify(data, null, 2).substring(0, 500);
+                } else {
+                    result.className = 'result error';
+                    result.textContent = '❌ Backend respondeu com erro:\nStatus: ' + response.status + '\n' + response.statusText;
+                }
+            } catch (error) {
+                result.className = 'result error';
+                result.textContent = '❌ ERRO ao conectar:\n' + error.message + '\n\nVerifique se:\n- Backend está rodando (python manage.py runserver)\n- Porta 8000 está acessível\n- CORS está habilitado';
+            }
+        }
+
+        async function testFilterOptions() {
+            const result = document.getElementById('connection-result');
+            result.className = 'result loading';
+            result.textContent = '⏳ Carregando filtros...';
+
+            try {
+                if (typeof getFilterOptions === 'undefined') {
+                    throw new Error('getFilterOptions não definida - erro no api.js');
+                }
+                const res = await getFilterOptions();
+                if (res.success) {
+                    result.className = 'result success';
+                    result.textContent = '✅ Filtros carregados com sucesso:\n' + JSON.stringify(res.data, null, 2);
+                } else {
+                    result.className = 'result error';
+                    result.textContent = '❌ Erro: ' + res.error;
+                }
+            } catch (error) {
+                result.className = 'result error';
+                result.textContent = '❌ ERRO: ' + error.message;
+            }
+        }
+
+        async function testProducts() {
+            const result = document.getElementById('connection-result');
+            result.className = 'result loading';
+            result.textContent = '⏳ Carregando produtos...';
+
+            try {
+                if (typeof searchProducts === 'undefined') {
+                    throw new Error('searchProducts não definida - erro no api.js');
+                }
+                const res = await searchProducts({page: 1, limit: 3});
+                if (res.success && res.data.products) {
+                    result.className = 'result success';
+                    const summary = {
+                        total_products: res.data.pagination.total_items,
+                        products_returned: res.data.products.length,
+                        sample: res.data.products[0]
+                    };
+                    result.textContent = '✅ Produtos carregados:\n' + JSON.stringify(summary, null, 2);
+                } else {
+                    result.className = 'result error';
+                    result.textContent = '❌ Erro: ' + res.error;
+                }
+            } catch (error) {
+                result.className = 'result error';
+                result.textContent = '❌ ERRO: ' + error.message;
+            }
+        }
+
+        // LocalStorage Management
+        function showStorage() {
+            const content = document.getElementById('storage-content');
+            if (localStorage.length === 0) {
+                content.className = 'result info';
+                content.textContent = 'LocalStorage vazio';
+                return;
+            }
+
+            let html = '<table><tr><th>Chave</th><th>Valor</th></tr>';
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                const value = localStorage.getItem(key);
+                html += `<tr><td>${key}</td><td>${value.substring(0, 100)}${value.length > 100 ? '...' : ''}</td></tr>`;
+            }
+            html += '</table>';
+            content.innerHTML = html;
+            content.className = 'result success';
+        }
+
+        function clearAllStorage() {
+            if (confirm('⚠️ Tem certeza que quer limpar TODO o LocalStorage?')) {
+                localStorage.clear();
+                updateAuthStatus();
+                showStorage();
+                alert('✅ LocalStorage foi limpo!');
+            }
+        }
+
+        // Inicializar na carga da página
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('⏳ Carregando debug page...');
+            initSystemInfo();
+            updateAuthStatus();
+            console.log('🚀 Debug page carregada com sucesso!');
+        });
+    </script>
+</body>
+</html>
