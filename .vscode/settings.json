@@ -3,6 +3,8 @@
         "/^cd \"c:\\\\Users\\\\enzo\\.machado\\\\OneDrive - CESMAC\\\\TRABALHO 2 COUR\\\\bragoon-global-master\\\\bragoon-ecommerce\\\\backend\" ; python manage\\.py shell$/": {
             "approve": true,
             "matchCommandLine": true
-        }
+        },
+        "git add": true,
+        "git commit": true
     }
 }
