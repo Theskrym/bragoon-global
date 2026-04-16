@@ -10,7 +10,7 @@ import os
 import functools
 from pathlib import Path
 
-PORT = 3002
+PORT = 3001
 DIRECTORY = str(Path(__file__).parent)
 
 class CORSRequestHandler(http.server.SimpleHTTPRequestHandler):
