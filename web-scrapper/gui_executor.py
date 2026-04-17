@@ -32,6 +32,7 @@ class PipelineConfig:
             "timeout": 3600,  # 1 hora
             "check_output": ["produtos.xlsx"],  # Valida se arquivo foi criado
         },
+        '''
         {
             "id": "2_classifier",
             "name": "📝 Classificador de Nomes",
@@ -62,6 +63,7 @@ class PipelineConfig:
             "timeout": 300,
             "check_output": [],
         },
+        '''
          {
             "id": "5_sql_importer",
             "name": "📊 Upload para SQL",

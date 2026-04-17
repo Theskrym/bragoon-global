@@ -93,7 +93,7 @@ product_id_counter = 0
 AWIN_OAUTH_TOKEN = "41cc956c-1fa2-440d-bbbe-132e5afad516"
 AWIN_PUBLISHER_ID = "1861294"
 AWIN_API_URL = "https://api.awin.com/publishers/{publisher_id}/deep-links"
-
+'''
 def generate_awin_affiliate_link(product_url):
     """Gera um link de afiliado usando a API Link Builder da Awin."""
     headers = {
@@ -119,7 +119,7 @@ def generate_awin_affiliate_link(product_url):
     except requests.exceptions.RequestException as e:
         print(f"Erro ao gerar link de afiliado: {e}")
         return product_url
-
+'''
 def format_filter_path(filter_path):
     """Formata o caminho de filtros com cores ANSI para exibição bonita.
     
@@ -381,24 +381,20 @@ def scrape_kabum_category(url, filter_path):
             
             items = []
             try:
-                # Estratégia 1: Procurar as imagens de produtos
-                img_elements = driver.find_elements(By.XPATH, '//img[contains(@src, "kabum.com.br/produtos") and @width and @height]')
+                # Estratégia 1: Procurar as imagens de produtos (mais robusto)
+                img_elements = driver.find_elements(By.XPATH, '//img[contains(@src, "kabum.com.br/produtos")]')
                 
                 if img_elements:
-                    print(f"\033[92m✓ {len(img_elements)} imagens de produtos encontradas\033[0m")
-                    # Procurar por divs pais que contêm essas imagens
+                    # Procurar por divs pais que contêm essas imagens - usar ancestor::div[5] que é o melhor container
                     seen_containers = set()
                     for img in img_elements:
                         try:
-                            # Subir 5 níveis no máximo para encontrar o container
-                            for level in range(1, 6):
-                                xpath = f"ancestor::div[{level}]"
-                                container = img.find_element(By.XPATH, xpath)
-                                container_id = id(container)
-                                if container_id not in seen_containers:
-                                    items.append(container)
-                                    seen_containers.add(container_id)
-                                break
+                            # ancestor::div[5] é geralmente a melhor escolha para o container do produto
+                            container = img.find_element(By.XPATH, "ancestor::div[5]")
+                            container_id = id(container)
+                            if container_id not in seen_containers:
+                                items.append(container)
+                                seen_containers.add(container_id)
                         except:
                             pass
                 
@@ -416,8 +412,6 @@ def scrape_kabum_category(url, filter_path):
             if not items:
                 print(f"\033[93m⚠️  Nenhum produto encontrado na página. Encerrando...\033[0m")
                 break
-            
-            print(f"\033[92m✓ {len(items)} produtos encontrados nesta página\033[0m")
             
             for item in items:
                 try:
@@ -439,108 +433,157 @@ def scrape_kabum_category(url, filter_path):
                     
                     # NOME DO PRODUTO - Tentar nova estrutura primeiro
                     try:
-                        # Nova estrutura: span.text-ellipsis.line-clamp-2 
-                        # Dentro de um container com h-40 (altura 160px)
+                        # Primeira opção: span com classes específicas
                         name_elem = item.find_element(By.CSS_SELECTOR, 'span.text-ellipsis.line-clamp-2.break-normal')
                         name_text = name_elem.text.strip()
                         if name_text:
                             product_data['name'] = name_text
                     except NoSuchElementException:
                         try:
-                            # Fallback: qualquer span com text-ellipsis
+                            # Segunda opção: qualquer span com text-ellipsis
                             name_elem = item.find_element(By.CSS_SELECTOR, 'span.text-ellipsis')
                             name_text = name_elem.text.strip()
                             if name_text:
                                 product_data['name'] = name_text
                         except NoSuchElementException:
                             try:
-                                # Estrutura antiga: span.nameCard
+                                # Terceira opção: estrutura antiga
                                 product_data['name'] = item.find_element(By.CSS_SELECTOR, 'span.nameCard').text
                             except NoSuchElementException:
                                 pass
 
-                    # PREÇO DO PRODUTO - Nova estrutura com dois spans
+                    # PREÇO DO PRODUTO - Nova estrutura com spans
                     try:
-                        # Nova estrutura: procurar a div que contém R$ e o valor
-                        # <span>R$</span><span>2.800,00</span>
-                        price_elements = item.find_elements(By.XPATH, './/span[@class="text-base font-semibold text-gray-800"]')
-                        if len(price_elements) >= 2:
-                            # O último span deve ser o valor (o penúltimo é R$)
-                            value = price_elements[-1].text.strip()  # "2.800,00"
-                            currency = price_elements[-2].text.strip()  # "R$"
+                        # Procurar spans com a classe de preço
+                        price_spans = item.find_elements(By.XPATH, './/span[@class="text-base font-semibold text-gray-800"]')
+                        if len(price_spans) >= 2:
+                            # O penúltimo são os 2 últimos: penúltimo é R$ e último é o valor
+                            currency = price_spans[-2].text.strip()
+                            value = price_spans[-1].text.strip()
                             if value and currency:
                                 product_data['price'] = f"{currency} {value}"
                         else:
-                            raise NoSuchElementException("Preço não encontrado")
+                            raise NoSuchElementException("Preço não encontrado com estrutura padrão")
                     except (NoSuchElementException, IndexError):
                         try:
-                            # Fallback: procurar qualquer span com preço
-                            price_elem = item.find_element(By.XPATH, './/span[contains(text(), "R$")]/..')
+                            # Fallback: procurar qualquer span com R$ ou valor de preço
+                            price_elem = item.find_element(By.XPATH, './/span[contains(text(), "R$")]')
                             price_text = price_elem.text.strip()
                             if price_text:
-                                product_data['price'] = price_text[:30]  # Limitar tamanho
+                                product_data['price'] = price_text[:30]
                         except:
                             try:
-                                # Estrutura antiga
+                                # Estrutura muito antiga
                                 price = item.find_element(By.CSS_SELECTOR, 'span.priceCard').text
                                 product_data['price'] = price if price else 'Preço não disponível'
                             except NoSuchElementException:
                                 pass
 
-                    # RATING - Nova estrutura
+                    # RATING - Extração melhorada
                     try:
-                        # Nova estrutura: span dentro de div que começa com icon
-                        # <span class="text-xs text-gray-400 font-semibold"><span class="sr-only">Avaliação&nbsp;</span>5.0<span class="sr-only">&nbsp;de 5.0</span></span>
+                        # Procurar span com classe de avaliação
                         rating_elem = item.find_element(By.XPATH, './/span[@class="text-xs text-gray-400 font-semibold"]')
                         rating_text = rating_elem.text.strip()
                         
                         # Extrair apenas o número (pode vir como "5.0", "4.5", etc)
-                        # Remover texto de sr-only
                         rating_match = re.search(r'(\d+[\.,]\d+|\d+)', rating_text)
                         if rating_match:
                             rating_value = rating_match.group(1).replace(',', '.')
                             product_data['rating'] = rating_value
                     except NoSuchElementException:
-                        pass
+                        # Fallback: procurar qualquer span que contenha avaliação
+                        try:
+                            all_spans = item.find_elements(By.XPATH, './/span')
+                            for span in all_spans:
+                                text = span.text.strip()
+                                rating_match = re.search(r'^(\d+[\.,]\d+)$|^(\d+)$', text)
+                                if rating_match:
+                                    rating_value = (rating_match.group(1) or rating_match.group(2)).replace(',', '.')
+                                    # Validar que é um número entre 0 e 5
+                                    if float(rating_value) <= 5:
+                                        product_data['rating'] = rating_value
+                                        break
+                        except:
+                            pass
 
                     # IMAGEM - Procura a imagem do produto
                     try:
-                        # Tentar nova estrutura: img com width/height específicos
+                        # Procurar imagem com width específico (mais robusto)
                         img = item.find_element(By.CSS_SELECTOR, 'img[width="162"]')
                         src = img.get_attribute('src')
-                        if src:
+                        if src and src.startswith('http'):
                             product_data['image_url'] = src
                     except NoSuchElementException:
                         try:
-                            # Estrutura antiga: img.imageCard
+                            # Fallback: estrutura antiga
                             product_data['image_url'] = item.find_element(By.CSS_SELECTOR, 'img.imageCard').get_attribute('src')
                         except NoSuchElementException:
-                            pass
-
-                    # LINK DO PRODUTO - Verificar estrutura
-                    try:
-                        # Tentar encontrar link direto
-                        product_link = item.find_element(By.CSS_SELECTOR, 'a.productLink').get_attribute('href')
-                        product_data['product_link'] = product_link
-                        product_data['affiliate_link'] = generate_awin_affiliate_link(product_link)
-                    except NoSuchElementException:
-                        try:
-                            # Tentar encontrar link em um ancestral <a>
-                            parent_link = item.find_element(By.XPATH, './/a[@href]')
-                            product_link = parent_link.get_attribute('href')
-                            if product_link and product_link != '#':
-                                product_data['product_link'] = product_link
-                                product_data['affiliate_link'] = generate_awin_affiliate_link(product_link)
-                        except NoSuchElementException:
-                            # Se não conseguir encontrar link, tentar extrair do atributo data
+                            # Última opção: qualquer img dentro do container que venha do Kabum
                             try:
-                                # Alguns sites usam data attributes
-                                product_link = item.get_attribute('data-href') or item.get_attribute('data-url')
-                                if product_link:
-                                    product_data['product_link'] = product_link
-                                    product_data['affiliate_link'] = generate_awin_affiliate_link(product_link)
+                                img_elem = item.find_element(By.XPATH, './/img[contains(@src, "kabum.com.br/produtos")]')
+                                src = img_elem.get_attribute('src')
+                                if src and src.startswith('http'):
+                                    product_data['image_url'] = src
                             except:
                                 pass
+                    
+                    # REVIEW COUNT - Procurar contagem de reviews/avaliações
+                    try:
+                        # Procurar por spans que possuem formato "(123)"
+                        review_elem = item.find_element(By.XPATH, './/span[contains(text(), "(") and contains(text(), ")")]')
+                        review_text = review_elem.text.strip()
+                        # Extrair número entre parênteses
+                        review_match = re.search(r'\((\d+)\)', review_text)
+                        if review_match:
+                            product_data['review_count'] = review_match.group(1)
+                    except:
+                        pass
+
+                    # LINK DO PRODUTO - Estratégia melhorada
+                    product_link_found = None
+                    try:
+                        # Primeira opção: procurar link com classe productLink (estrutura moderna)
+                        try:
+                            product_link = item.find_element(By.CSS_SELECTOR, 'a.productLink').get_attribute('href')
+                            if product_link and product_link != '#':
+                                product_link_found = product_link
+                        except NoSuchElementException:
+                            pass
+                        
+                        # Segunda opção: procurar por qualquer link dentro do container que aponta para /hardware/
+                        if not product_link_found:
+                            all_links = item.find_elements(By.XPATH, './/a[@href]')
+                            
+                            # Criterio 1: Link que contém /hardware/ mas não tem ? (parâmetros)
+                            for link in all_links:
+                                href = link.get_attribute('href')
+                                if href and 'kabum.com.br/hardware/' in href and '?' not in href:
+                                    product_link_found = href
+                                    break
+                            
+                            # Criterio 2: Qualquer link válido do Kabum se não encontrou pelo critério 1
+                            if not product_link_found:
+                                for link in all_links:
+                                    href = link.get_attribute('href')
+                                    if href and 'kabum.com.br' in href and href != '#':
+                                        product_link_found = href
+                                        break
+                        
+                        # Terceira opção: data attributes (alguns sites)
+                        if not product_link_found:
+                            product_link_found = item.get_attribute('data-href') or item.get_attribute('data-url')
+                        
+                        # Atualizar dados com o link encontrado
+                        if product_link_found and product_link_found != '#':
+                            product_data['product_link'] = product_link_found
+                            try:
+                                product_data['affiliate_link'] = generate_awin_affiliate_link(product_link_found)
+                            except Exception as awin_error:
+                                # Se houver erro ao gerar affiliate link, apenas mantem o URL original
+                                product_data['affiliate_link'] = product_link_found
+                    except Exception as e:
+                        # Se houver qualquer erro na extração de link, não interrompe o fluxo
+                        pass
 
                     products.append(product_data)
 
@@ -778,12 +821,12 @@ def scrape_all_categories():
 
 
     # Scraping Amazon
-    #for menu, categories in amazon_categories.items():
-     #   process_categories_recursive(categories, [menu], scrape_amazon_category, 'amazon')
+    for menu, categories in amazon_categories.items():
+        process_categories_recursive(categories, [menu], scrape_amazon_category, 'amazon')
    
     # Scraping Kabum
-    #for menu, categories in kabum_categories.items():
-      #  process_categories_recursive(categories, [menu], scrape_kabum_category, 'Kabum')
+    for menu, categories in kabum_categories.items():
+        process_categories_recursive(categories, [menu], scrape_kabum_category, 'Kabum')
     
     
     horafinal = datetime.now()
@@ -814,7 +857,7 @@ def scrape_all_categories():
         
         # Salvar também em CSV (compatibilidade)
         try:
-            csv_path = os.path.join(output_dir, 'produtos.csv')
+            csv_path = '../bragoon-ecommerce/backend/produtos.csv'
             final_df.to_csv(csv_path, index=False, encoding='utf-8')
             print(f"✅ \033[92mDados salvos em: {csv_path}\033[0m")
         except Exception as e:

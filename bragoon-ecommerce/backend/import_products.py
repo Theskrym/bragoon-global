@@ -97,19 +97,27 @@ def run():
     with open(csv_path, 'r', encoding='utf-8') as file:
         reader = csv.DictReader(file)
         batch = []
+        count = 0
         
-        for i, row in enumerate(reader, 1):
-            batch.append(row)
+        for row in reader:
+            if row is None:
+                continue
+            # Remover espaços dos nomes das colunas
+            row = {key.strip(): (value.strip() if isinstance(value, str) else value) for key, value in row.items() if key}
             
-            if i % batch_size == 0:
-                print(f"Processando batch {i//batch_size}...")
+            batch.append(row)
+            count += 1
+            
+            if len(batch) >= batch_size:
+                print(f"Processando batch de {len(batch)} produtos...")
                 process_batch(batch)
                 batch = []
         
-        # Processa o último batch (incompleto)
+        # Processa último batch
         if batch:
-            print(f"Processando último batch...")
+            print("Processando último batch...")
             process_batch(batch)
+    
     
     print("Importação concluída com sucesso!")
 
