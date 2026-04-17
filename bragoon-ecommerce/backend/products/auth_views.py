@@ -10,6 +10,7 @@ from rest_framework.permissions import AllowAny
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 from rest_framework.authtoken.models import Token
+from .models import UserProfile, Cart
 import logging
 import re
 
@@ -168,6 +169,14 @@ class RegisterView(APIView):
                 first_name=first_name,
                 last_name=last_name
             )
+
+            # Criar perfil do usuário (LGPD Compliance)
+            profile, _ = UserProfile.objects.get_or_create(user=user)
+            logger.info(f'✅ Perfil criado para: {email}')
+
+            # Criar carrinho vazio para o usuário
+            cart, _ = Cart.objects.get_or_create(user=user)
+            logger.info(f'✅ Carrinho criado para: {email}')
 
             # Gerar token
             token, _ = Token.objects.get_or_create(user=user)

@@ -51,11 +51,15 @@ header {
     max-width: 1200px;
     margin: 0 auto;
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-start;
     align-items: center;
     padding: 1rem 2rem;
     flex-wrap: wrap;
     gap: 1rem;
+}
+
+.logo {
+    margin-right: auto;
 }
 
 .logo h1 {
@@ -96,6 +100,46 @@ header {
 .btn-login.btn-profile {
     background: rgba(76, 175, 80, 0.3);
     border-color: #4CAF50;
+}
+
+/* Profile Avatar in Navbar */
+.navbar-profile-container {
+    display: flex;
+    align-items: center;
+    margin-left: 1rem;
+    margin-right: 0.5rem;
+    order: 999;
+}
+
+.cart-icon {
+    order: 1000;
+}
+
+.navbar-profile-avatar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    border: 2px solid white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+}
+
+.navbar-profile-avatar:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: scale(1.05);
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+}
+
+.navbar-avatar-img {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
 }
 
 .btn-login.btn-profile:hover {
@@ -630,11 +674,16 @@ main {
 }
 
 .stat-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
     text-align: center;
     padding: 2rem;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
     border-radius: 10px;
+    min-height: 200px;
 }
 
 .stat-card h3 {
@@ -750,39 +799,109 @@ main {
 }
 
 /* ===========================
-   TEAM & PARTNERS SECTIONS
+   STORES & PARTNERS SECTIONS
    =========================== */
 
 .team-section,
-.partners-section {
+.stores-section {
     padding: 3rem 0;
     margin-bottom: 2rem;
 }
 
 .team-section h2,
-.partners-section h2 {
+.stores-section h2 {
+    text-align: center;
+    margin-bottom: 2rem;
+    font-size: 2rem;
+    color: #333;
+}
+
+/* Carousel de lojas */
+.stores-carousel {
+    overflow: hidden;
+    padding: 2rem 0;
+    position: relative;
+}
+
+/* Gradient fade effect nas extremidades */
+.stores-carousel::before,
+.stores-carousel::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    width: 80px;
+    height: 100%;
+    pointer-events: none;
+    z-index: 2;
+}
+
+.stores-carousel::before {
+    left: 0;
+    background: linear-gradient(to right, rgba(248, 249, 250, 1), rgba(248, 249, 250, 0));
+}
+
+.stores-carousel::after {
+    right: 0;
+    background: linear-gradient(to left, rgba(248, 249, 250, 1), rgba(248, 249, 250, 0));
+}
+
+.stores-scroll {
+    display: flex;
+    gap: 2rem;
+    animation: infiniteScroll 60s linear infinite;
+    padding: 0 2rem;
+}
+
+.store-badge {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 1rem 2rem;
+    border-radius: 50px;
+    white-space: nowrap;
+    font-weight: 500;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+    transition: transform 0.3s ease;
+}
+
+.store-badge:hover {
+    transform: scale(1.05);
+}
+
+@keyframes infiniteScroll {
+    0% {
+        transform: translateX(0);
+    }
+    100% {
+        transform: translateX(calc(-25% * 1));
+    }
+}
+
+/* Pausa na animação ao passar o mouse */
+.stores-scroll:hover {
+    animation-play-state: paused;
+}
+
+.team-section h2 {
     text-align: center;
     margin-bottom: 1rem;
     font-size: 2rem;
     color: #333;
 }
 
-.team-section > p,
-.partners-section > p {
+.team-section > p {
     text-align: center;
     color: #666;
     margin-bottom: 2rem;
 }
 
-.team-grid,
-.partners-grid {
+.team-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 1.5rem;
 }
 
-.team-card,
-.partner-card {
+.team-card {
     background: white;
     padding: 2rem;
     border-radius: 10px;
@@ -790,14 +909,12 @@ main {
     text-align: center;
 }
 
-.team-card h3,
-.partner-card h3 {
+.team-card h3 {
     margin-bottom: 0.5rem;
     color: #333;
 }
 
-.team-card p,
-.partner-card p {
+.team-card p {
     color: #666;
 }
 
@@ -967,15 +1084,14 @@ footer {
     .stats-section h2,
     .team-section h2,
     .faq-section h2,
-    .partners-section h2 {
+    .stores-section h2 {
         font-size: 1.5rem;
     }
 
     .info-grid,
     .stats-grid,
     .team-grid,
-    .faq-grid,
-    .partners-grid {
+    .faq-grid {
         grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
         gap: 1rem;
     }

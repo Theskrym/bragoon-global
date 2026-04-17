@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Meu Perfil - BRAGOON Store</title>
+    <title>Meu Perfil - BRAGOON Agregador de Preços</title>
     <link rel="stylesheet" href="css/styles.css">
     <style>
         .profile-container {
@@ -265,7 +265,7 @@
         <nav class="navbar">
             <div class="navbar-container">
                 <div class="logo">
-                    <h1>🎮 BRAGOON Store</h1>
+                    <h1>📊 BRAGOON Agregador</h1>
                 </div>
                 <ul class="nav-menu">
                     <li><a href="index.html">Home</a></li>
@@ -296,10 +296,10 @@
                             👤
                         </div>
                         <input type="file" id="avatar-input" class="upload-input" accept="image/*">
-                        <button class="btn-upload" onclick="document.getElementById('avatar-input').click()">
+                        <button type="button" class="btn-upload" onclick="document.getElementById('avatar-input').click()">
                             📷 Mudar Foto
                         </button>
-                        <button class="btn-upload btn-danger" onclick="removeAvatar()">
+                        <button type="button" id="delete-avatar-btn" class="btn-upload btn-danger">
                             🗑️ Remover Foto
                         </button>
                     </div>
@@ -425,7 +425,9 @@
         </div>
     </footer>
 
+    <script src="js/auth.js"></script>
     <script src="js/api.js"></script>
-    <script src="js/auth.js"></script>    <script src="js/navbar.js"></script>    <script src="js/perfil.js"></script>
+    <script src="js/navbar.js"></script>
+    <script src="js/perfil.js"></script>
 </body>
 </html>

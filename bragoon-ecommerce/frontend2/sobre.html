@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sobre - BRAGOON Store</title>
+    <title>Sobre - BRAGOON Agregador de Preços</title>
     <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
@@ -12,7 +12,7 @@
         <nav class="navbar">
             <div class="navbar-container">
                 <div class="logo">
-                    <h1>🎮 BRAGOON Store</h1>
+                    <h1>📊 BRAGOON Agregador</h1>
                 </div>
                 <ul class="nav-menu">
                     <li><a href="index.html">Home</a></li>
@@ -31,38 +31,38 @@
     <!-- MAIN CONTENT -->
     <main>
         <section class="page-hero">
-            <h1>Sobre BRAGOON Store</h1>
-            <p>Conheça a história e missão da nossa loja</p>
+            <h1>Sobre BRAGOON Agregador</h1>
+            <p>Compare preços de componentes em um único lugar</p>
         </section>
 
         <div class="container">
             <!-- ABOUT SECTION -->
             <section class="about-section">
                 <article>
-                    <h2>Quem Somos</h2>
+                    <h2>O que é BRAGOON?</h2>
                     <p>
-                        BRAGOON Store é uma loja especializada em componentes de informática de alta qualidade. 
-                        Desde 2020, nos comprometemos em oferecer os melhores produtos com os melhores preços 
-                        para gamers, profissionais e entusiastas de tecnologia.
+                        BRAGOON é um agregador de preços especializado em componentes de informática. 
+                        Nossa missão é ajudar você a encontrar o melhor preço entre os principais vendedores, 
+                        poupando seu tempo e dinheiro. Ganhamos através de links afiliados - sem nenhum custo adicional para você!
                     </p>
                 </article>
 
                 <article>
-                    <h2>Nossa Missão</h2>
+                    <h2>Como Funciona</h2>
                     <p>
-                        Tornar a tecnologia de ponta acessível a todos. Acreditamos que qualidade e preço justo 
-                        podem caminhar juntos. Por isso, trabalhamos diretamente com os maiores fabricantes do mundo 
-                        para garantir os melhores preços sem comprometer a qualidade.
+                        BRAGOON sincroniza preços de diversos sites de venda em tempo real. Você pode comparar 
+                        produtos, adicionar ao carrinho para lembrar depois, e clicar em "Abrir Todos os Produtos" para 
+                        acessar os links afiliados dos vendedores. É rápido, fácil e totalmente grátis!
                     </p>
                 </article>
 
                 <article>
                     <h2>Nossos Valores</h2>
                     <ul>
-                        <li><strong>Qualidade:</strong> Apenas produtos de fabricantes confiáveis</li>
-                        <li><strong>Confiança:</strong> Transparência total em nossas operações</li>
-                        <li><strong>Atendimento:</strong> Suporte 24/7 para nossos clientes</li>
-                        <li><strong>Inovação:</strong> Sempre acompanhando as novidades do mercado</li>
+                        <li><strong>Transparência:</strong> Preços reais dos vendedores sem marcações</li>
+                        <li><strong>Honestidade:</strong> Divulgamos que ganhamos com links afiliados</li>
+                        <li><strong>Eficiência:</strong> Comparar preços em segundos</li>
+                        <li><strong>Utilidade:</strong> Ajudamos você a economizar nas compras</li>
                     </ul>
                 </article>
             </section>
@@ -72,67 +72,42 @@
                 <h2>Nossos Números</h2>
                 <div class="stats-grid">
                     <div class="stat-card">
-                        <h3>50.000+</h3>
-                        <p>Clientes Satisfeitos</p>
+                        <h3 id="stat-products">--</h3>
+                        <p>Produtos Listados</p>
                     </div>
                     <div class="stat-card">
-                        <h3>10.000+</h3>
-                        <p>Produtos em Estoque</p>
+                        <h3 id="stat-stores">--</h3>
+                        <p>Vendedores Monitorados</p>
                     </div>
                     <div class="stat-card">
-                        <h3>369</h3>
-                        <p>Páginas de Produtos</p>
+                        <h3 id="stat-update">Carregando...</h3>
+                        <p>Última Atualização</p>
                     </div>
                     <div class="stat-card">
-                        <h3>4</h3>
-                        <p>Principais Parceiros</p>
+                        <h3>0%</h3>
+                        <p>Custos Adicionais</p>
                     </div>
                 </div>
             </section>
 
-            <!-- PARTNERS SECTION -->
-            <section class="partners-section">
-                <h2>Nossos Parceiros</h2>
-                <div class="partners-grid">
-                    <article class="partner-card">
-                        <h3>Pichau</h3>
-                        <p>Loja online especializada em componentes gamer</p>
-                    </article>
-                    <article class="partner-card">
-                        <h3>Kabum</h3>
-                        <p>Maior varejista de eletrônicos da América Latina</p>
-                    </article>
-                    <article class="partner-card">
-                        <h3>Amazon</h3>
-                        <p>Líder global em comércio eletrônico</p>
-                    </article>
-                    <article class="partner-card">
-                        <h3>Terabyte</h3>
-                        <p>Distribuidor de produtos de informática</p>
-                    </article>
+            <!-- STORES SECTION -->
+            <section class="stores-section">
+                <h2>Lojas Analisadas</h2>
+                <div class="stores-carousel">
+                    <div class="stores-scroll" id="stores-scroll">
+                        <!-- Lojas carregadas dinamicamente -->
+                    </div>
                 </div>
             </section>
 
             <!-- TEAM SECTION -->
             <section class="team-section">
                 <h2>Equipe BRAGOON</h2>
-                <p>Somos um time apaixonado por tecnologia, dedicado a oferecer a melhor experiência.</p>
+                <p>uma equipe de muitos membros</p>
                 <div class="team-grid">
                     <article class="team-card">
-                        <h3>👨‍💼 João Silva</h3>
+                        <h3>👨‍💼 Enzo Cabianca</h3>
                         <p>Founder & CEO</p>
-                    </article>
-                    <article class="team-card">
-                        <h3>👩‍💻 Maria Santos</h3>
-                        <p>CTO & Desenvolvedora</p>
-                    </article>
-                    <article class="team-card">
-                        <h3>👨‍💼 Pedro Oliveira</h3>
-                        <p>Gerente de Operações</p>
-                    </article>
-                    <article class="team-card">
-                        <h3>👩‍💼 Ana Costa</h3>
-                        <p>Atendimento ao Cliente</p>
                     </article>
                 </div>
             </section>
@@ -166,5 +141,77 @@
         </div>
     </footer>
 
-    <script src="js/main.js"></script>    <script src="js/navbar.js"></script></body>
+    <script src="js/auth.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/navbar.js"></script>
+    <script src="js/main.js"></script>
+    
+    <script>
+        // Função para formatar data no formato DD/M/YY, HH:MM em horário de Brasília
+        function formatDateBrasilia(dateString) {
+            const date = new Date(dateString);
+            // Converter para horário de Brasília (UTC-3)
+            const brasiliaDate = new Date(date.toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }));
+            
+            const day = String(brasiliaDate.getDate()).padStart(2, '0');
+            const month = brasiliaDate.getMonth() + 1;
+            const year = String(brasiliaDate.getFullYear()).slice(-2);
+            const hours = String(brasiliaDate.getHours()).padStart(2, '0');
+            const minutes = String(brasiliaDate.getMinutes()).padStart(2, '0');
+            
+            return `${day}/${month}/${year}, ${hours}:${minutes}`;
+        }
+        
+        // Carregar estatísticas e lojas quando a página carregar
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                const response = await fetch('http://localhost:8000/api/products/stats/');
+                const data = await response.json();
+                
+                // Atualizar produtos listados
+                const productsEl = document.getElementById('stat-products');
+                if (productsEl && data.total_products) {
+                    productsEl.textContent = data.total_products.toLocaleString('pt-BR');
+                }
+                
+                // Atualizar vendedores monitorados
+                const storesEl = document.getElementById('stat-stores');
+                if (storesEl && data.total_stores) {
+                    storesEl.textContent = data.total_stores;
+                }
+                
+                // Atualizar data da última atualização em horário de Brasília
+                const updateEl = document.getElementById('stat-update');
+                if (updateEl && data.last_update) {
+                    updateEl.textContent = formatDateBrasilia(data.last_update);
+                }
+            } catch (error) {
+                console.error('Erro ao carregar estatísticas:', error);
+            }
+            
+            // Carregar lojas analisadas
+            try {
+                const response = await fetch('http://localhost:8000/api/products/filter_options/');
+                const data = await response.json();
+                
+                if (data.stores && data.stores.length > 0) {
+                    const storesScroll = document.getElementById('stores-scroll');
+                    const storesList = data.stores;
+                    
+                    // Duplicar a lista 4 vezes para preencher o espaço inteiro e permitir animação suave
+                    const allStores = [...storesList, ...storesList, ...storesList, ...storesList];
+                    
+                    allStores.forEach(store => {
+                        const storeDiv = document.createElement('div');
+                        storeDiv.className = 'store-badge';
+                        storeDiv.textContent = store;
+                        storesScroll.appendChild(storeDiv);
+                    });
+                }
+            } catch (error) {
+                console.error('Erro ao carregar lojas:', error);
+            }
+        });
+    </script>
+</body>
 </html>

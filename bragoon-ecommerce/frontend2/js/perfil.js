@@ -2,20 +2,22 @@
 // PROFILE PAGE SCRIPT
 // ===========================
 
-const API_URL = 'http://localhost:8000/api/perfil/';
-
 document.addEventListener('DOMContentLoaded', () => {
-    loadUserProfile();
-    setupAvatarUpload();
-    setupFormSubmit();
-    updateCartCount();
+    // Esperar um pouco para garantir que auth.js foi carregado
+    setTimeout(() => {
+        loadUserProfile();
+        setupAvatarUpload();
+        setupFormSubmit();
+        updateCartCount();
+    }, 100);
 });
 
 // Load user profile data
 async function loadUserProfile() {
-    const token = getAuthToken();
+    // Usar auth.isAuthenticated() do AuthManager
+    const isAuth = typeof auth !== 'undefined' ? auth.isAuthenticated() : !!getAuthToken();
     
-    if (!token) {
+    if (!isAuth) {
         showMessage('Você precisa estar logado para acessar o perfil.', 'error');
         setTimeout(() => {
             window.location.href = 'login.html';
@@ -24,40 +26,27 @@ async function loadUserProfile() {
     }
 
     try {
-        const response = await fetch(API_URL, {
-            method: 'GET',
-            headers: {
-                'Authorization': `Token ${token}`,
-                'Content-Type': 'application/json'
-            }
-        });
+        // Usar apiCall ao invés de fetch direto para sincronizar token automaticamente
+        const result = await apiCall('/perfil/');
 
-        if (response.ok) {
-            const data = await response.json();
-            populateProfileForm(data);
-        } else if (response.status === 401) {
-            showMessage('Sessão expirada. Faça login novamente.', 'error');
-            setTimeout(() => {
-                window.location.href = 'login.html';
-            }, 2000);
+        if (result.success && result.data) {
+            populateProfileForm(result.data);
+        } else {
+            showMessage('Erro ao carregar perfil: ' + result.error, 'error');
+            console.error('Erro na resposta:', result);
         }
     } catch (error) {
         console.error('Erro ao carregar perfil:', error);
         showMessage('Erro ao carregar dados do perfil.', 'error');
     }
 
-    // Load user info from localStorage
-    const user = getCurrentUser();
+    // Load user info from localStorage/AuthManager
+    const user = typeof auth !== 'undefined' ? auth.getUser() : getCurrentUser();
     if (user) {
         document.getElementById('user-name').textContent = 
             `${user.first_name || user.username} ${user.last_name || ''}`.trim();
         document.getElementById('user-email').textContent = user.email;
         document.getElementById('email').value = user.email;
-        
-        // Format date
-        const joinDate = new Date(user.id);
-        document.getElementById('user-since').textContent = 
-            joinDate.toLocaleDateString('pt-BR', { year: 'numeric', month: 'long', day: 'numeric' });
     }
 }
 
@@ -71,16 +60,16 @@ function populateProfileForm(data) {
     if (data.cep) document.getElementById('cep').value = data.cep;
 
     // Load avatar if exists
-    if (data.avatar) {
+    if (data.avatar_url) {
         const avatarPreview = document.getElementById('avatar-preview');
         avatarPreview.innerHTML = '';
         const img = document.createElement('img');
-        img.src = data.avatar;
+        img.src = data.avatar_url;
         img.alt = 'Avatar do usuário';
         avatarPreview.appendChild(img);
         
         // Store avatar URL in session
-        sessionStorage.setItem('userAvatar', data.avatar);
+        sessionStorage.setItem('userAvatar', data.avatar_url);
     }
 }
 
@@ -123,25 +112,26 @@ function setupAvatarUpload() {
 
 // Upload avatar to server
 async function uploadAvatar(file) {
-    const token = getAuthToken();
     const formData = new FormData();
     formData.append('avatar', file);
 
     try {
-        const response = await fetch(API_URL, {
-            method: 'PATCH',
-            headers: {
-                'Authorization': `Token ${token}`
-            },
-            body: formData
-        });
+        // Usar formDataCall que não adiciona Content-Type application/json
+        const result = await formDataCall('/perfil/', formData);
 
-        if (response.ok) {
-            const data = await response.json();
+        if (result.success) {
+            const data = result.data;
             showMessage('✅ Foto de perfil atualizada com sucesso!', 'success');
-            sessionStorage.setItem('userAvatar', data.avatar);
+            sessionStorage.setItem('userAvatar', data.avatar_url);
+            // Atualizar avatar na navbar
+            refreshNavbarAvatar();
+            
+            // Recarregar perfil para mostrar a nova foto
+            setTimeout(() => {
+                window.location.reload();
+            }, 1500);
         } else {
-            showMessage('Erro ao fazer upload da foto.', 'error');
+            showMessage('Erro ao fazer upload da foto: ' + result.error, 'error');
         }
     } catch (error) {
         console.error('Erro ao fazer upload:', error);
@@ -149,25 +139,29 @@ async function uploadAvatar(file) {
     }
 }
 
+function refreshNavbarAvatar() {
+    const avatarImg = document.querySelector('.avatar-img');
+    if (avatarImg) {
+        // Forçar recarga da imagem
+        avatarImg.src = avatarImg.src + '?' + new Date().getTime();
+    }
+}
+
 // Remove avatar
 async function removeAvatar() {
-    const token = getAuthToken();
-    
     try {
-        const response = await fetch(API_URL, {
+        const result = await apiCall('/perfil/', {
             method: 'PATCH',
-            headers: {
-                'Authorization': `Token ${token}`,
-                'Content-Type': 'application/json'
-            },
             body: JSON.stringify({ avatar: null })
         });
 
-        if (response.ok) {
+        if (result.success) {
             const avatarPreview = document.getElementById('avatar-preview');
             avatarPreview.innerHTML = '👤';
             showMessage('✅ Foto de perfil removida!', 'success');
             sessionStorage.removeItem('userAvatar');
+            // Atualizar avatar na navbar
+            updateNavbarAvatar();
         } else {
             showMessage('Erro ao remover foto.', 'error');
         }
@@ -181,14 +175,43 @@ async function removeAvatar() {
 function setupFormSubmit() {
     const form = document.getElementById('profile-form');
     form.addEventListener('submit', handleProfileSubmit);
+    
+    // Botão para remover avatar (LGPD compliance)
+    const deleteAvatarBtn = document.getElementById('delete-avatar-btn');
+    if (deleteAvatarBtn) {
+        deleteAvatarBtn.addEventListener('click', deleteAvatar);
+    }
+}
+
+// Deletar avatar - LGPD Compliance
+async function deleteAvatar() {
+    if (!confirm('Tem certeza que deseja remover sua foto de perfil? Esta ação não pode ser desfeita.')) {
+        return;
+    }
+
+    try {
+        const result = await apiCall('/perfil/delete_avatar/', {
+            method: 'DELETE'
+        });
+
+        if (result.success) {
+            showMessage('✅ Foto de perfil removida com sucesso!', 'success');
+            setTimeout(() => {
+                window.location.reload();
+            }, 1500);
+        } else {
+            showMessage('Erro ao remover foto: ' + result.error, 'error');
+        }
+    } catch (error) {
+        console.error('Erro:', error);
+        showMessage('Erro ao conectar com o servidor.', 'error');
+    }
 }
 
 // Handle profile form submission
 async function handleProfileSubmit(e) {
     e.preventDefault();
 
-    const token = getAuthToken();
-    
     const profileData = {
         bio: document.getElementById('bio').value,
         telefone: document.getElementById('telefone').value,
@@ -199,23 +222,18 @@ async function handleProfileSubmit(e) {
     };
 
     try {
-        const response = await fetch(API_URL, {
+        const result = await apiCall('/perfil/', {
             method: 'PATCH',
-            headers: {
-                'Authorization': `Token ${token}`,
-                'Content-Type': 'application/json'
-            },
             body: JSON.stringify(profileData)
         });
 
-        if (response.ok) {
+        if (result.success) {
             showMessage('✅ Perfil atualizado com sucesso!', 'success');
             setTimeout(() => {
                 window.location.reload();
             }, 1500);
         } else {
-            const error = await response.json();
-            showMessage('Erro ao atualizar perfil: ' + JSON.stringify(error), 'error');
+            showMessage('Erro ao atualizar perfil: ' + result.error, 'error');
         }
     } catch (error) {
         console.error('Erro:', error);
@@ -276,7 +294,7 @@ function getAuthToken() {
 }
 
 function getCurrentUser() {
-    const userStr = localStorage.getItem('currentUser');
+    const userStr = localStorage.getItem('user');
     return userStr ? JSON.parse(userStr) : null;
 }
 

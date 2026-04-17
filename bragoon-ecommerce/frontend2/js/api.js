@@ -38,28 +38,54 @@ async function apiCall(endpoint, options = {}, retries = 2) {
 
     const finalOptions = { ...defaultOptions, ...options };
 
-    // Adicionar token de autenticação se existir - com tratamento de erro
+    // Adicionar token de autenticação usando AuthManager
     try {
-        const authToken = localStorage.getItem('authToken');
-        if (authToken && authToken !== 'undefined' && authToken.length > 0) {
-            finalOptions.headers['Authorization'] = `Bearer ${authToken}`;
+        if (typeof auth !== 'undefined') {
+            const isAuth = auth.isAuthenticated();
+            console.log('🔐 AuthManager disponível. Autenticado?', isAuth);
+            
+            if (isAuth) {
+                const authHeaders = auth.getAuthHeaders();
+                finalOptions.headers['Authorization'] = authHeaders['Authorization'];
+                console.log('✅ Token adicionado:', authHeaders['Authorization'].substring(0, 30) + '...');
+            } else {
+                console.warn('⚠️ Não autenticado no AuthManager');
+            }
+        } else {
+            console.warn('⚠️ AuthManager não disponível');
+            // Fallback para localStorage se auth não estiver disponível
+            try {
+                const authToken = localStorage.getItem('authToken');
+                if (authToken && authToken !== 'undefined' && authToken.length > 0) {
+                    finalOptions.headers['Authorization'] = `Token ${authToken}`;
+                    console.log('✅ Token do localStorage:', authToken.substring(0, 30) + '...');
+                }
+            } catch (storageError) {
+                console.warn('⚠️ Erro ao acessar localStorage:', storageError);
+            }
         }
-    } catch (storageError) {
-        console.warn('⚠️ Erro ao acessar localStorage para authToken:', storageError);
+    } catch (error) {
+        console.warn('⚠️ Erro ao obter token:', error);
     }
 
     try {
         console.log('🌐 Fazendo requisição para:', url);
+        console.log('📤 Headers:', finalOptions.headers);
         const response = await fetch(url, finalOptions);
         
         if (!response.ok) {
             if (response.status === 401 && retries > 0) {
-                // Token expirado ou inválido
-                try {
-                    localStorage.removeItem('authToken');
-                    localStorage.removeItem('user');
-                } catch (e) {
-                    console.warn('⚠️ Erro ao limpar localStorage:', e);
+                // Token expirado ou inválido - fazer logout via AuthManager
+                console.warn('⚠️ Unauthorized (401) - Token inválido');
+                if (typeof auth !== 'undefined') {
+                    auth.logout();
+                } else {
+                    try {
+                        localStorage.removeItem('authToken');
+                        localStorage.removeItem('user');
+                    } catch (e) {
+                        console.warn('⚠️ Erro ao limpar localStorage:', e);
+                    }
                 }
                 return { success: false, error: 'Autenticação expirada' };
             }
@@ -76,7 +102,61 @@ async function apiCall(endpoint, options = {}, retries = 2) {
 }
 
 // ===============================
-// SEARCH & PRODUCT ENDPOINTS
+// FORM DATA UPLOAD HELPER
+// ===============================
+
+/**
+ * Faz upload de FormData (para imagens, arquivos, etc)
+ * NÃO adiciona Content-Type application/json
+ * Deixa o navegador configurar multipart/form-data automaticamente
+ */
+async function formDataCall(endpoint, formData) {
+    const url = `${API_BASE_URL}${endpoint}`;
+    
+    const options = {
+        method: 'PATCH'
+    };
+
+    // Adicionar token mas SEM definir Content-Type
+    // O navegador automaticamente configura multipart/form-data
+    const headers = {};
+    try {
+        if (typeof auth !== 'undefined' && auth.isAuthenticated()) {
+            const authHeaders = auth.getAuthHeaders();
+            headers['Authorization'] = authHeaders['Authorization'];
+        } else {
+            const authToken = localStorage.getItem('authToken');
+            if (authToken) {
+                headers['Authorization'] = `Token ${authToken}`;
+            }
+        }
+    } catch (error) {
+        console.warn('⚠️ Erro ao obter token:', error);
+    }
+
+    if (Object.keys(headers).length > 0) {
+        options.headers = headers;
+    }
+    
+    options.body = formData;
+
+    try {
+        console.log('🌐 FormData upload para:', url);
+        const response = await fetch(url, options);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        console.log('✅ Upload sucesso:', data);
+        return { success: true, data };
+    } catch (error) {
+        console.error(`❌ Upload Error (${endpoint}):`, error);
+        return { success: false, error: error.message };
+    }
+}
+
 // ===============================
 
 async function searchProducts(params) {
@@ -146,18 +226,38 @@ async function loginUser(email, password) {
     }
     
     try {
+        console.log('🔑 Iniciando login para:', email);
         const result = await apiCall('/login/', {
             method: 'POST',
             body: JSON.stringify({ email, password })
         });
         
-        if (result.success && result.data.token) {
-            // Armazenar token e usuário
+        console.log('📨 Resposta do login:', result);
+        
+        if (result.success && result.data) {
+            console.log('✅ Login bem-sucedido. Dados recebidos:', result.data);
+            
+            if (!result.data.token) {
+                console.error('❌ Resposta não contém token!', result.data);
+                return { success: false, error: 'Token não recebido do servidor' };
+            }
+            
+            // Armazenar usando AuthManager (com suporte LGPD)
             try {
-                localStorage.setItem('authToken', result.data.token);
-                localStorage.setItem('user', JSON.stringify(result.data.user));
+                console.log('💾 Salvando via AuthManager');
+                if (typeof auth !== 'undefined') {
+                    auth.setAuth(result.data.token, result.data.user, true);
+                    console.log('✅ Dados salvos via AuthManager');
+                } else {
+                    console.warn('⚠️ AuthManager não disponível, usando fallback localStorage');
+                    // Fallback se auth não estiver carregado
+                    localStorage.setItem('authToken', result.data.token);
+                    localStorage.setItem('user', JSON.stringify(result.data.user));
+                    localStorage.setItem('consentimento_dados', 'true');
+                    console.log('✅ Dados salvos em localStorage (fallback)');
+                }
             } catch (storageError) {
-                console.warn('⚠️ Erro ao armazenar no localStorage:', storageError);
+                console.warn('⚠️ Erro ao armazenar autenticação:', storageError);
             }
             
             console.log('✅ Login bem-sucedido:', result.data.user.email);
@@ -253,11 +353,20 @@ async function submitContactForm(formData) {
 }
 
 // ===============================
-// CART MANAGEMENT (LocalStorage)
+// CART MANAGEMENT (Backend Sync)
 // ===============================
 
+/**
+ * Sincroniza carrinho local com backend quando autenticado
+ * Se não autenticado, usa localStorage
+ */
 function getCart() {
     try {
+        // Se tem token, usar carrinho do backend
+        if (localStorage.getItem('authToken')) {
+            return getBackendCart();
+        }
+        // Caso contrário, usar localStorage
         const cart = localStorage.getItem('cart');
         return cart ? JSON.parse(cart) : [];
     } catch (error) {
@@ -271,12 +380,42 @@ function getCart() {
     }
 }
 
+async function getBackendCart() {
+    try {
+        const result = await apiCall('/carrinho/');
+        if (result.success && result.data && result.data.itens) {
+            // Converter itens do backend para formato do frontend
+            return result.data.itens.map(item => ({
+                product_ID: item.product.product_ID,
+                name: item.product.name,
+                price: item.product.price,
+                image_url: item.product.image_url,
+                store: item.product.store,
+                affiliate_link: item.product.affiliate_link,
+                quantity: item.quantidade
+            }));
+        }
+        return [];
+    } catch (error) {
+        console.warn('⚠️ Erro ao obter carrinho do backend:', error);
+        return [];
+    }
+}
+
 function saveCart(cart) {
     try {
-        localStorage.setItem('cart', JSON.stringify(cart));
+        const isAuthenticated = localStorage.getItem('authToken');
+        
+        if (isAuthenticated) {
+            // Se autenticado, sincronizar com backend
+            saveBackendCart(cart);
+        } else {
+            // Se não, salvar em localStorage
+            localStorage.setItem('cart', JSON.stringify(cart));
+        }
         updateCartCount();
     } catch (error) {
-        console.error('⚠️ Erro ao salvar carrinho no localStorage:', error);
+        console.error('⚠️ Erro ao salvar carrinho:', error);
         try {
             localStorage.clear();
             localStorage.setItem('cart', JSON.stringify(cart));
@@ -286,38 +425,184 @@ function saveCart(cart) {
     }
 }
 
-function addToCart(product) {
-    const cart = getCart();
-    const existingItem = cart.find(item => 
-        item.product_ID === product.product_ID || 
-        item.id === product.id
-    );
+async function saveBackendCart(cart) {
+    try {
+        // Limpar carrinho backend
+        await apiCall('/carrinho/limpar/', { method: 'POST' });
+        
+        // Readicionar todos os itens
+        for (const item of cart) {
+            await apiCall('/carrinho/adicionar/', {
+                method: 'POST',
+                body: JSON.stringify({
+                    product_ID: item.product_ID,
+                    quantidade: item.quantity
+                })
+            });
+        }
+        console.log('✅ Carrinho sincronizado com backend');
+    } catch (error) {
+        console.error('⚠️ Erro ao sincronizar carrinho com backend:', error);
+    }
+}
 
-    if (existingItem) {
-        existingItem.quantity = (existingItem.quantity || 1) + 1;
-    } else {
-        cart.push({
-            ...product,
-            quantity: 1
-        });
+function addToCart(product) {
+    // Validar que o produto tem um product_ID
+    if (!product || !product.product_ID) {
+        console.error('❌ Erro: Produto sem product_ID', product);
+        return false;
     }
 
-    saveCart(cart);
+    const isAuthenticated = localStorage.getItem('authToken');
+    
+    if (isAuthenticated) {
+        // Adicionar no backend
+        addToBackendCart(product);
+    } else {
+        // Adicionar no localStorage
+        addToLocalCart(product);
+    }
+    
     return true;
 }
 
-function removeFromCart(productId) {
-    let cart = getCart();
-    cart = cart.filter(item => 
-        item.product_ID !== productId && item.id !== productId
+async function addToBackendCart(product) {
+    try {
+        const result = await apiCall('/carrinho/adicionar/', {
+            method: 'POST',
+            body: JSON.stringify({
+                product_ID: product.product_ID,
+                quantidade: 1
+            })
+        });
+        
+        if (result.success) {
+            console.log(`✅ Produto "${product.name}" adicionado ao carrinho do backend`);
+            updateCartCount();
+        } else {
+            console.error('❌ Erro ao adicionar ao carrinho:', result.error);
+        }
+    } catch (error) {
+        console.error('❌ Erro ao adicionar ao carrinho do backend:', error);
+    }
+}
+
+function addToLocalCart(product) {
+    const cart = getCart();
+    
+    // Procurar apenas por product_ID (campo único)
+    const existingItem = cart.find(item => 
+        item.product_ID === product.product_ID
     );
+
+    if (existingItem) {
+        // DEDUPLICATION: Increment quantity instead of adding duplicate
+        existingItem.quantity = (existingItem.quantity || 1) + 1;
+        console.log(`✅ Produto "${product.name}" incrementado para quantidade ${existingItem.quantity}`);
+    } else {
+        // New item - adicionar com product_ID como identificador único
+        const cartItem = {
+            product_ID: product.product_ID,
+            name: product.name,
+            price: product.price,
+            image_url: product.image_url,
+            store: product.store,
+            affiliate_link: product.affiliate_link,
+            quantity: 1
+        };
+        cart.push(cartItem);
+        console.log(`✅ Novo produto "${product.name}" adicionado ao carrinho`);
+    }
+
+    saveCart(cart);
+}
+
+function removeFromCart(productId) {
+    const isAuthenticated = localStorage.getItem('authToken');
+    
+    if (isAuthenticated) {
+        removeFromBackendCart(productId);
+    } else {
+        removeFromLocalCart(productId);
+    }
+}
+
+async function removeFromBackendCart(productId) {
+    try {
+        const result = await apiCall('/carrinho/remover/', {
+            method: 'POST',
+            body: JSON.stringify({
+                product_ID: productId
+            })
+        });
+        
+        if (result.success) {
+            console.log(`✅ Produto ${productId} removido do carrinho do backend`);
+            updateCartCount();
+        } else {
+            console.error('❌ Erro ao remover do carrinho:', result.error);
+        }
+    } catch (error) {
+        console.error('❌ Erro ao remover do carrinho do backend:', error);
+    }
+}
+
+function removeFromLocalCart(productId) {
+    let cart = getCart();
+    const initialLength = cart.length;
+    cart = cart.filter(item => 
+        item.product_ID !== productId
+    );
+    if (cart.length < initialLength) {
+        console.log(`✅ Produto ${productId} removido do carrinho`);
+    } else {
+        console.warn(`⚠️ Produto ${productId} não encontrado no carrinho`);
+    }
     saveCart(cart);
 }
 
 function updateCartItemQuantity(productId, quantity) {
+    const isAuthenticated = localStorage.getItem('authToken');
+    
+    if (isAuthenticated) {
+        updateBackendCartQuantity(productId, quantity);
+    } else {
+        updateLocalCartQuantity(productId, quantity);
+    }
+}
+
+async function updateBackendCartQuantity(productId, quantity) {
+    try {
+        if (quantity <= 0) {
+            removeFromBackendCart(productId);
+        } else {
+            // Remover e re-adicionar com nova quantidade
+            await apiCall('/carrinho/remover/', {
+                method: 'POST',
+                body: JSON.stringify({ product_ID: productId })
+            });
+            
+            for (let i = 0; i < quantity; i++) {
+                await apiCall('/carrinho/adicionar/', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        product_ID: productId,
+                        quantidade: 1
+                    })
+                });
+            }
+            console.log(`✅ Quantidade do produto ${productId} atualizada para ${quantity}`);
+            updateCartCount();
+        }
+    } catch (error) {
+        console.error('❌ Erro ao atualizar quantidade no backend:', error);
+    }
+}
+
+function updateLocalCartQuantity(productId, quantity) {
     const cart = getCart();
     const item = cart.find(item => 
-        item.product_ID === productId || item.id === productId
+        item.product_ID === productId
     );
 
     if (item) {
@@ -325,13 +610,37 @@ function updateCartItemQuantity(productId, quantity) {
             removeFromCart(productId);
         } else {
             item.quantity = quantity;
+            console.log(`✅ Quantidade do produto ${productId} atualizada para ${quantity}`);
             saveCart(cart);
         }
+    } else {
+        console.warn(`⚠️ Produto ${productId} não encontrado no carrinho`);
     }
 }
 
 function clearCart() {
-    localStorage.removeItem('cart');
+    const isAuthenticated = localStorage.getItem('authToken');
+    
+    if (isAuthenticated) {
+        clearBackendCart();
+    } else {
+        localStorage.removeItem('cart');
+        updateCartCount();
+    }
+}
+
+async function clearBackendCart() {
+    try {
+        const result = await apiCall('/carrinho/limpar/', {
+            method: 'POST'
+        });
+        
+        if (result.success) {
+            console.log('✅ Carrinho do backend foi limpo');
+        }
+    } catch (error) {
+        console.error('❌ Erro ao limpar carrinho do backend:', error);
+    }
     updateCartCount();
 }
 
@@ -339,10 +648,25 @@ function clearCart() {
 // CART UI UPDATES
 // ===============================
 
-function updateCartCount() {
+async function updateCartCount() {
     try {
-        const cart = getCart();
-        const totalItems = cart.reduce((sum, item) => sum + (item.quantity || 1), 0);
+        // Se autenticado, pegar do backend; caso contrário, do localStorage
+        let totalItems = 0;
+        
+        if (localStorage.getItem('authToken')) {
+            // Pegar do backend
+            const cart = await getCart();
+            if (Array.isArray(cart)) {
+                totalItems = cart.length;
+            }
+        } else {
+            // Pegar do localStorage
+            const cartData = localStorage.getItem('cart');
+            const items = cartData ? JSON.parse(cartData) : [];
+            if (Array.isArray(items)) {
+                totalItems = items.reduce((sum, item) => sum + (item.quantity || 1), 0);
+            }
+        }
         
         const cartCountElements = document.querySelectorAll('#cart-count');
         cartCountElements.forEach(el => {

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Carrinho - BRAGOON Store</title>
+    <title>Carrinho - BRAGOON Agregador de Preços</title>
     <link rel="stylesheet" href="css/styles.css">
     <style>
         .cart-container {
@@ -289,7 +289,7 @@
         <nav class="navbar">
             <div class="navbar-container">
                 <div class="logo">
-                    <h1>🎮 BRAGOON Store</h1>
+                    <h1>📊 BRAGOON Agregador</h1>
                 </div>
                 <ul class="nav-menu">
                     <li><a href="index.html">Home</a></li>
@@ -325,7 +325,7 @@
                     <h3>📊 Resumo</h3>
 
                     <div class="checkout-info">
-                        ℹ️ Aqui você agrega as melhores ofertas. Clique em "Ir para a Loja" para completar a compra!
+                        ℹ️ BRAGOON é um agregador de preços. Clique em "Ir para a Loja" para acessar o site do vendedor. Ganhamos através de links afiliados - sem custos extras para você!
                     </div>
 
                     <div class="summary-row">
@@ -357,8 +357,8 @@
                         🗑️ Limpar Carrinho
                     </button>
 
-                    <button class="btn-checkout" id="btn-checkout" onclick="checkout()" style="display: none;">
-                        ✓ Confirmar Seleção
+                    <button class="btn-checkout" id="btn-checkout" onclick="openAllProducts()" style="display: none;">
+                        🔗 Abrir Todos os Produtos
                     </button>
                 </div>
             </div>
@@ -370,7 +370,7 @@
         <div class="footer-container">
             <div class="footer-section">
                 <h4>Sobre BRAGOON</h4>
-                <p>A loja de confiança para componentes de informática de qualidade.</p>
+                <p>Agregador de preços para eletrônicos e componentes. Comparamos preços de diversos sites e oferecemos links afiliados sem aumentar o custo para você.</p>
             </div>
             <div class="footer-section">
                 <h4>Links Rápidos</h4>
@@ -382,17 +382,18 @@
         </div>
     </footer>
 
+    <script src="js/auth.js"></script>
     <script src="js/api.js"></script>
     <script src="js/navbar.js"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', async () => {
             updateCartCount();
-            displayCartItems();
+            await displayCartItems();
             updateCartSummary();
         });
 
-        function displayCartItems() {
-            const cart = getCart();
+        async function displayCartItems() {
+            const cart = await getCart();
             const cartContent = document.getElementById('cart-content');
 
             if (cart.length === 0) {
@@ -421,14 +422,8 @@
                         </div>
 
                         <div class="cart-item-actions">
-                            <div class="quantity-control">
-                                <button onclick="updateQuantity(${index}, ${product.quantity - 1})">−</button>
-                                <input type="number" value="${product.quantity}" min="1" readonly>
-                                <button onclick="updateQuantity(${index}, ${product.quantity + 1})">+</button>
-                            </div>
-
                             <a href="${product.affiliate_link || '#'}" target="_blank" class="btn-visit-store-item" ${isUnavailable ? 'style="opacity: 0.5;"' : ''}>
-                                🔗 Loja
+                                🔗 Visitar Loja
                             </a>
 
                             <button class="btn-remove" onclick="removeItem(${index})">
@@ -443,8 +438,8 @@
             document.getElementById('btn-checkout').style.display = 'block';
         }
 
-        function updateQuantity(index, newQuantity) {
-            const cart = getCart();
+        async function updateQuantity(index, newQuantity) {
+            const cart = await getCart();
             if (newQuantity < 1) {
                 if (confirm('Remover este item do carrinho?')) {
                     removeItem(index);
@@ -454,25 +449,25 @@
 
             cart[index].quantity = newQuantity;
             saveCart(cart);
-            displayCartItems();
-            updateCartSummary();
+            await displayCartItems();
+            await updateCartSummary();
         }
 
-        function removeItem(index) {
-            const cart = getCart();
+        async function removeItem(index) {
+            const cart = await getCart();
             const productName = cart[index].name;
             
             if (confirm(`Remover "${truncateText(productName, 30)}" do carrinho?`)) {
                 cart.splice(index, 1);
                 saveCart(cart);
-                displayCartItems();
-                updateCartSummary();
+                await displayCartItems();
+                await updateCartSummary();
                 updateCartCount();
             }
         }
 
-        function updateCartSummary() {
-            const cart = getCart();
+        async function updateCartSummary() {
+            const cart = await getCart();
 
             const totalItems = cart.length;
             const totalQuantity = cart.reduce((sum, item) => sum + (item.quantity || 1), 0);
@@ -497,35 +492,39 @@
             document.getElementById('total-price').textContent = formatPrice(totalPrice);
         }
 
-        function checkout() {
-            const cart = getCart();
+        async function openAllProducts() {
+            const cart = await getCart();
             if (cart.length === 0) {
                 alert('❌ Seu carrinho está vazio!');
                 return;
             }
 
-            // Agrupar produtos por loja
-            const byStore = {};
+            // Extrair unique product_ids e suas informações
+            const uniqueProducts = {};
             cart.forEach(product => {
-                if (!byStore[product.store]) {
-                    byStore[product.store] = [];
+                if (!uniqueProducts[product.product_ID]) {
+                    uniqueProducts[product.product_ID] = product;
                 }
-                byStore[product.store].push(product);
             });
 
-            // Criar mensagem com resumo
-            let message = '📊 Resumo do Carrinho:\n\n';
-            Object.entries(byStore).forEach(([store, products]) => {
-                message += `🏪 ${store}:\n`;
-                products.forEach(p => {
-                    message += `  • ${truncateText(p.name, 40)} (${p.quantity || 1}x)\n`;
-                });
-                message += '\n';
-            });
+            // Contar quantos links serão abertos
+            const linksToOpen = Object.values(uniqueProducts).filter(p => p.affiliate_link).length;
+            
+            if (linksToOpen === 0) {
+                alert('❌ Nenhum produto com link disponível!');
+                return;
+            }
 
-            message += '💡 Dica: Cada loja geralmente oferece as mesmas opções de pagamento (cartão, boleto, pix, etc)';
-
+            // Avisar o usuário que vai abrir múltiplas abas
+            const message = `🔗 Abrindo ${linksToOpen} aba(s) com os produtos do seu carrinho...\n\nCertifique-se que seu navegador permite abrir múltiplas abas!`;
             alert(message);
+
+            // Abrir cada link em uma aba nova
+            Object.values(uniqueProducts).forEach(product => {
+                if (product.affiliate_link) {
+                    window.open(product.affiliate_link, '_blank');
+                }
+            });
         }
 
         function clearCart() {

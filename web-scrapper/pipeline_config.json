@@ -1,8 +1,10 @@
 {
-  "0_teste": true,
-  "0_teste_colors": true,
-  "1_scraper": true,
+  "1_scraper": false,
   "2_classifier": false,
   "3_classifier_ml": false,
-  "4_html_generator": false
+  "4_html_generator": false,
+  "5_sql_importer": true,
+  "django_server": false,
+  "frontend_server": false,
+  "frontend2_server": false
 }

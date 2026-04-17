@@ -32,7 +32,6 @@ class PipelineConfig:
             "timeout": 3600,  # 1 hora
             "check_output": ["produtos.xlsx"],  # Valida se arquivo foi criado
         },
-        '''
         {
             "id": "2_classifier",
             "name": "📝 Classificador de Nomes",
@@ -63,7 +62,6 @@ class PipelineConfig:
             "timeout": 300,
             "check_output": [],
         },
-        '''
          {
             "id": "5_sql_importer",
             "name": "📊 Upload para SQL",
@@ -98,7 +96,7 @@ class PipelineConfig:
         {
             "id": "frontend2_server",
             "name": "🌐 Frontend HTML/JS",
-            "description": "Inicia servidor Frontend HTML (localhost:8080)",
+            "description": "Inicia servidor Frontend HTML (localhost:3001)",
             "command": "python serve.py",
             "cwd_relative": "../bragoon-ecommerce/frontend2",
             "enabled": False,

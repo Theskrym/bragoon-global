@@ -4,9 +4,9 @@ from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.parsers import MultiPartParser, FormParser
 from django_filters.rest_framework import DjangoFilterBackend
-from .models import Product, PriceHistory, Alert, UserProfile
-from .serializers import ProductSerializer, PriceHistorySerializer, AlertSerializer, UserProfileSerializer
-from django.db.models import Min, Max, Avg, Case, When, Q, BooleanField
+from .models import Product, PriceHistory, Alert, UserProfile, Cart, CartItem, SyncLog
+from .serializers import ProductSerializer, PriceHistorySerializer, AlertSerializer, UserProfileSerializer, CartSerializer, CartItemSerializer
+from django.db.models import Min, Max, Avg, Case, When, Q, BooleanField, F, Sum
 from django.utils import timezone
 from datetime import timedelta
 import logging
@@ -28,6 +28,11 @@ class UserProfileView(generics.RetrieveUpdateAPIView):
         profile, created = UserProfile.objects.get_or_create(user=self.request.user)
         return profile
     
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context['request'] = self.request
+        return context
+    
     def put(self, request, *args, **kwargs):
         profile = self.get_object()
         serializer = self.get_serializer(profile, data=request.data)
@@ -43,15 +48,145 @@ class UserProfileView(generics.RetrieveUpdateAPIView):
         serializer = self.get_serializer(profile, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
-            logger.info(f'✅ Perfil parcialmente atualizado: {request.user.email}')
+            logger.info(f'✅ Perfil atualizado (PATCH): {request.user.email}')
             return Response(serializer.data, status=status.HTTP_200_OK)
         logger.error(f'❌ Erro ao atualizar perfil: {serializer.errors}')
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    @action(detail=False, methods=['delete'], permission_classes=[IsAuthenticated])
+    def delete_avatar(self, request):
+        """
+        Deletar avatar do usuário - LGPD Compliance (Direito ao Esquecimento)
+        DELETE /api/perfil/delete_avatar/
+        """
+        profile = self.get_object()
+        
+        if profile.avatar:
+            # Deletar arquivo fisicamente
+            if profile.avatar.storage.exists(profile.avatar.name):
+                profile.avatar.storage.delete(profile.avatar.name)
+                logger.info(f'🗑️  Avatar deletado para: {request.user.email}')
+        
+        # Limpar campo de avatar
+        profile.avatar = None
+        profile.save()
+        
+        return Response(
+            {'success': True, 'message': 'Avatar deletado com sucesso'},
+            status=status.HTTP_200_OK
+        )
     
     def get(self, request, *args, **kwargs):
         profile = self.get_object()
         serializer = self.get_serializer(profile)
         return Response(serializer.data)
+
+
+class CartViewSet(viewsets.ViewSet):
+    """
+    API endpoint para gerenciar o carrinho de compras do usuário.
+    GET /api/carrinho/ - Obtém carrinho com todos os itens
+    POST /api/carrinho/adicionar/ - Adiciona produto ao carrinho
+    POST /api/carrinho/remover/ - Remove produto do carrinho
+    PATCH /api/carrinho/limpar/ - Limpa o carrinho
+    """
+    permission_classes = [IsAuthenticated]
+    
+    def get_cart(self, request):
+        """Helper para obter ou criar carrinho do usuário"""
+        cart, created = Cart.objects.get_or_create(user=request.user)
+        if created:
+            logger.info(f'✅ Novo carrinho criado para {request.user.email}')
+        return cart
+    
+    def list(self, request):
+        """Retorna o carrinho com todos os itens"""
+        cart = self.get_cart(request)
+        serializer = CartSerializer(cart)
+        return Response(serializer.data)
+    
+    @action(detail=False, methods=['post'], url_path='adicionar')
+    def adicionar(self, request):
+        """Adiciona um produto ao carrinho"""
+        cart = self.get_cart(request)
+        product_id = request.data.get('product_ID')
+        quantidade = int(request.data.get('quantidade', 1))
+        
+        if not product_id:
+            return Response(
+                {'error': 'product_ID é obrigatório'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            product = Product.objects.get(product_ID=product_id)
+        except Product.DoesNotExist:
+            return Response(
+                {'error': f'Produto {product_id} não encontrado'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        cart_item, created = CartItem.objects.get_or_create(
+            cart=cart,
+            product=product,
+            defaults={'quantidade': quantidade, 'preco_no_momento': product.price}
+        )
+        
+        if not created:
+            # Atualizar quantidade se o item já existe
+            cart_item.quantidade += quantidade
+            cart_item.save()
+        
+        # Atualizar total de itens do carrinho
+        cart.total_itens = cart.itens.aggregate(total=Sum('quantidade'))['total'] or 0
+        cart.save()
+        
+        logger.info(f'✅ Produto {product_id} adicionado ao carrinho de {request.user.email}')
+        serializer = CartSerializer(cart)
+        return Response(serializer.data, status=status.HTTP_201_CREATED if created else status.HTTP_200_OK)
+    
+    @action(detail=False, methods=['post'], url_path='remover')
+    def remover(self, request):
+        """Remove um produto do carrinho"""
+        cart = self.get_cart(request)
+        product_id = request.data.get('product_ID')
+        
+        if not product_id:
+            return Response(
+                {'error': 'product_ID é obrigatório'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            cart_item = CartItem.objects.get(cart=cart, product_id=product_id)
+            cart_item.delete()
+            
+            # Atualizar total de itens do carrinho
+            cart.total_itens = cart.itens.aggregate(total=Sum('quantidade'))['total'] or 0
+            cart.save()
+            
+            logger.info(f'✅ Produto {product_id} removido do carrinho de {request.user.email}')
+        except CartItem.DoesNotExist:
+            return Response(
+                {'error': f'Produto {product_id} não encontrado no carrinho'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        serializer = CartSerializer(cart)
+        return Response(serializer.data)
+    
+    @action(detail=False, methods=['post'], url_path='limpar')
+    def limpar(self, request):
+        """Limpa todo o carrinho"""
+        cart = self.get_cart(request)
+        cart.itens.all().delete()
+        cart.total_itens = 0
+        cart.save()
+        
+        logger.info(f'✅ Carrinho de {request.user.email} foi limpo')
+        serializer = CartSerializer(cart)
+        return Response(serializer.data)
+
 
 class ProductViewSet(viewsets.ModelViewSet):
     queryset = Product.objects.all()
@@ -102,6 +237,28 @@ class ProductViewSet(viewsets.ModelViewSet):
         logger.info('Filter options response: %s', response_data)
 
         return Response(response_data)
+
+    @action(detail=False, methods=['get'])
+    def stats(self, request):
+        """Retorna estatísticas do agregador"""
+        from django.db.models import Count, Max
+        from datetime import datetime
+        
+        total_products = Product.objects.count()
+        total_stores = Product.objects.values('store').distinct().count()
+        
+        # Data da última sincronização (quando o scraper rodou)
+        latest_sync = SyncLog.objects.filter(status='success').order_by('-timestamp').first()
+        if latest_sync:
+            last_update = latest_sync.timestamp
+        else:
+            last_update = timezone.now()
+        
+        return Response({
+            'total_products': total_products,
+            'total_stores': total_stores,
+            'last_update': last_update
+        })
 
     @action(detail=False, methods=['get'])
     def search(self, request):
