@@ -360,11 +360,11 @@ async function submitContactForm(formData) {
  * Sincroniza carrinho local com backend quando autenticado
  * Se não autenticado, usa localStorage
  */
-function getCart() {
+async function getCart() {
     try {
         // Se tem token, usar carrinho do backend
         if (localStorage.getItem('authToken')) {
-            return getBackendCart();
+            return await getBackendCart();
         }
         // Caso contrário, usar localStorage
         const cart = localStorage.getItem('cart');
@@ -460,7 +460,7 @@ function addToCart(product) {
         addToBackendCart(product);
     } else {
         // Adicionar no localStorage
-        addToLocalCart(product);
+        addToLocalCart(product).catch(error => console.error('Erro ao adicionar ao carrinho:', error));
     }
     
     return true;
@@ -487,8 +487,8 @@ async function addToBackendCart(product) {
     }
 }
 
-function addToLocalCart(product) {
-    const cart = getCart();
+async function addToLocalCart(product) {
+    const cart = await getCart();
     
     // Procurar apenas por product_ID (campo único)
     const existingItem = cart.find(item => 
@@ -523,7 +523,7 @@ function removeFromCart(productId) {
     if (isAuthenticated) {
         removeFromBackendCart(productId);
     } else {
-        removeFromLocalCart(productId);
+        removeFromLocalCart(productId).catch(error => console.error('Erro ao remover do carrinho:', error));
     }
 }
 
@@ -547,8 +547,8 @@ async function removeFromBackendCart(productId) {
     }
 }
 
-function removeFromLocalCart(productId) {
-    let cart = getCart();
+async function removeFromLocalCart(productId) {
+    let cart = await getCart();
     const initialLength = cart.length;
     cart = cart.filter(item => 
         item.product_ID !== productId
@@ -567,7 +567,7 @@ function updateCartItemQuantity(productId, quantity) {
     if (isAuthenticated) {
         updateBackendCartQuantity(productId, quantity);
     } else {
-        updateLocalCartQuantity(productId, quantity);
+        updateLocalCartQuantity(productId, quantity).catch(error => console.error('Erro ao atualizar quantidade:', error));
     }
 }
 
@@ -599,8 +599,8 @@ async function updateBackendCartQuantity(productId, quantity) {
     }
 }
 
-function updateLocalCartQuantity(productId, quantity) {
-    const cart = getCart();
+async function updateLocalCartQuantity(productId, quantity) {
+    const cart = await getCart();
     const item = cart.find(item => 
         item.product_ID === productId
     );

@@ -217,13 +217,22 @@ function createProductCard(product) {
             <div class="product-price ${isUnavailable ? 'unavailable' : ''}">
                 ${isUnavailable ? 'Indisponível' : formatPrice(product.price)}
             </div>
-            <a 
-                href="produto-detalhes.html?id=${product.product_ID}"
-                class="btn btn-primary product-button" 
-                style="text-decoration: none; display: inline-block;"
-            >
-                📋 Ver Detalhes
-            </a>
+            <div class="product-actions">
+                <a 
+                    href="produto-detalhes.html?id=${product.product_ID}"
+                    class="btn btn-primary product-button" 
+                    style="text-decoration: none; display: inline-block;"
+                >
+                    📋 Ver Detalhes
+                </a>
+                <button 
+                    class="btn btn-secondary product-button add-to-cart-btn"
+                    onclick="addProductToCart(${JSON.stringify(product).replace(/"/g, '&quot;')})"
+                    ${isUnavailable ? 'disabled' : ''}
+                >
+                    🛒 Adicionar
+                </button>
+            </div>
         </div>
     `;
 
@@ -234,7 +243,23 @@ function addProductToCart(product) {
     const isAdded = addToCart(product);
     
     if (isAdded) {
-        showCartModal(product.name);
+        // Atualizar contagem do carrinho (aguardar para garantir que sincronizou)
+        setTimeout(() => {
+            updateCartCount();
+        }, 300);
+        
+        // Mostrar notificação personalizada
+        if (typeof showNotification === 'function') {
+            showNotification(
+                '✅ Adicionado ao Carrinho',
+                `"${truncateText(product.name, 40)}" foi adicionado!`,
+                'success',
+                3000
+            );
+        } else {
+            // Fallback para o modal se a notificação não estiver disponível
+            showCartModal(product.name);
+        }
     }
 }
 
