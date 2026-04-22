@@ -17,3 +17,10 @@ ex.: "https://www.kabum.com.br/produto/320799/processador-amd-ryzen-5-5500-3-6gh
 3. eu quero criar um sistema que o usuário possa criar "alertas" para dar trigger no navegador para mandar uma notificação quando um produto que o usuario escolher chegar a um preço que o usuario escolher.
 
 4. configurar o banco de dados para ter todas as coisas nescessárias para que tudo mencionado seja possivel.
+
+5. Atualizar scraper para popular ProductGroup e ProductVariant
+
+6. Testar fluxo:
+    - Ver produtos deduplilicados
+    - Criar alerta
+    - Receber notificação

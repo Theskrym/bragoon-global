@@ -20,14 +20,6 @@ class Product(models.Model):
     def __str__(self):
         return self.name
 
-class PriceHistory(models.Model):
-    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='price_history')
-    date = models.DateField()
-    price = models.DecimalField(max_digits=10, decimal_places=2)
-    
-    class Meta:
-        ordering = ['-date']
-
 class Alert(models.Model):
     user = models.ForeignKey('auth.User', on_delete=models.CASCADE)
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
@@ -38,9 +30,72 @@ class Alert(models.Model):
         ('price_below', 'Preço abaixo de'),
         ('lowest_6_months', 'Preço mais baixo em 6 meses')
     ])
+    triggered_at = models.DateTimeField(null=True, blank=True, help_text="Quando o alerta foi disparado")
     
     def __str__(self):
         return f"{self.user.username} - {self.product.name}"
+
+class ProductGroup(models.Model):
+    """
+    Agrupa produtos que são o mesmo item (mesmas especificações).
+    Exemplo: Ryzen 5 5500 de diferentes lojas = 1 ProductGroup
+    """
+    canonical_name = models.CharField(max_length=500, unique=True, db_index=True, help_text="Nome canônico do produto (sem loja, preço, etc)")
+    canonical_product = models.ForeignKey(Product, on_delete=models.SET_NULL, null=True, blank=True, related_name='group_canonical', help_text="Produto com menor preço do grupo")
+    lowest_price = models.DecimalField(max_digits=10, decimal_places=2, default=0, help_text="Preço mais baixo atual do grupo")
+    highest_price = models.DecimalField(max_digits=10, decimal_places=2, default=0, help_text="Preço mais alto atual do grupo")
+    average_price = models.DecimalField(max_digits=10, decimal_places=2, default=0, help_text="Preço médio do grupo")
+    variant_count = models.IntegerField(default=0, help_text="Quantidade de variantes (lojas) deste produto")
+    last_updated = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        verbose_name = "Grupo de Produtos"
+        verbose_name_plural = "Grupos de Produtos"
+        ordering = ['-last_updated']
+    
+    def __str__(self):
+        return self.canonical_name
+
+
+class PriceHistory(models.Model):
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='price_history')
+    group = models.ForeignKey(ProductGroup, on_delete=models.CASCADE, related_name='price_history', null=True, blank=True)
+    date = models.DateTimeField(auto_now_add=True, db_index=True)
+    price = models.DecimalField(max_digits=10, decimal_places=2)
+    store = models.CharField(max_length=100, blank=True, help_text="Loja onde foi registrado o preço")
+    is_lowest = models.BooleanField(default=False, help_text="Era o preço mais baixo no grupo naquela data")
+    is_highest = models.BooleanField(default=False, help_text="Era o preço mais alto no grupo naquela data")
+    
+    class Meta:
+        ordering = ['-date']
+        indexes = [
+            models.Index(fields=['group', '-date']),
+            models.Index(fields=['product', '-date']),
+        ]
+    
+    def __str__(self):
+        return f"{self.product.name} - R$ {self.price} em {self.date.date()}"
+
+class ProductVariant(models.Model):
+    """
+    Variante de um produto dentro de um grupo.
+    Diferentes lojas vendendo o mesmo produto = diferentes variantes.
+    """
+    group = models.ForeignKey(ProductGroup, on_delete=models.CASCADE, related_name='variants')
+    product = models.OneToOneField(Product, on_delete=models.CASCADE, related_name='variant_info')
+    store_name = models.CharField(max_length=100)
+    variant_name = models.CharField(max_length=200, blank=True, help_text="Nome específico da variante (cor, tamanho, etc)")
+    price = models.DecimalField(max_digits=10, decimal_places=2)
+    last_price_check = models.DateTimeField(auto_now=True)
+    is_available = models.BooleanField(default=True)
+    
+    class Meta:
+        unique_together = ['group', 'store_name']
+        ordering = ['price']
+    
+    def __str__(self):
+        return f"{self.group.canonical_name} - {self.store_name}"
 
 class UserProfile(models.Model):
     """
