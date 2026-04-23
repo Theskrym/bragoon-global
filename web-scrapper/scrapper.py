@@ -93,7 +93,7 @@ product_id_counter = 0
 AWIN_OAUTH_TOKEN = "41cc956c-1fa2-440d-bbbe-132e5afad516"
 AWIN_PUBLISHER_ID = "1861294"
 AWIN_API_URL = "https://api.awin.com/publishers/{publisher_id}/deep-links"
-'''
+
 def generate_awin_affiliate_link(product_url):
     """Gera um link de afiliado usando a API Link Builder da Awin."""
     headers = {
@@ -119,7 +119,9 @@ def generate_awin_affiliate_link(product_url):
     except requests.exceptions.RequestException as e:
         print(f"Erro ao gerar link de afiliado: {e}")
         return product_url
-'''
+    except Exception as e:
+        print(f"Erro inesperado: {e}")
+        return product_url
 def format_filter_path(filter_path):
     """Formata o caminho de filtros com cores ANSI para exibição bonita.
     

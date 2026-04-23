@@ -34,3 +34,8 @@ ex.: "https://www.kabum.com.br/produto/320799/processador-amd-ryzen-5-5500-3-6gh
     - são utilizados com frequencia em diversos códigos
     - se eu for criar uma página nova, ele provavelmente vai ser utilizado novamente
     - é um component que pode ter uma página dedicada a ele, exemplo, os graficos podem ter uma página inteira para fazer comparaçoes, entre outras coisas.
+
+10. fazer um trigger que quando a tabela produtos é alterada, cria um log dizendo qual foi a operação, deve ter o horário da mudança nesse log, e o horário do log mais recente deve preencher "<div class="stat-card">
+                        <h3 id="stat-update"></h3>
+                        <p>Última Atualização</p>
+                    </div>" em "sobre.html".
