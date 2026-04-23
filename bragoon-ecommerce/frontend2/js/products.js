@@ -124,52 +124,40 @@ async function loadProducts() {
 
     const params = {
         search: document.getElementById('search')?.value || '',
-        store: document.getElementById('store-select')?.value || '',
-        menu: document.getElementById('menu-select')?.value || '',
-        type: document.getElementById('type-select')?.value || '',
-        filter: document.getElementById('filter-select')?.value || '',
-        subfilter: document.getElementById('subfilter-select')?.value || '',
-        sort: document.getElementById('sort')?.value || 'price_asc',
+        category: document.getElementById('menu-select')?.value || '', // Usar category em vez de menu
         page: currentPage,
-        limit: 52
+        limit: 12
     };
 
-    console.log('📋 Parâmetros de busca:', params);
+    console.log('📋 Parâmetros de busca (ProductGroups):', params);
 
     try {
-        const result = await searchProducts(params);
+        const result = await getProductGroups(params);
 
         console.log('✅ Resultado recebido:', result);
-        console.log('📊 Dados:', result.data);
 
-        if (result.success && result.data) {
-            const data = result.data;
-            allProducts = data.products || [];
+        if (result && result.results) {
+            const groups = result.results;
+            allProducts = groups;
             
-            console.log('✨ Produtos carregados:', allProducts.length);
+            console.log('✨ Grupos de produtos carregados:', allProducts.length);
             
             if (allProducts.length === 0) {
-                console.warn('⚠️ Nenhum produto retornado pela API');
+                console.warn('⚠️ Nenhum grupo de produtos retornado pela API');
                 container.innerHTML = '<p class="loading">Nenhum produto encontrado.</p>';
             } else {
                 displayProducts(allProducts);
 
                 // Atualizar paginação
-                if (data.pagination) {
-                    totalPages = data.pagination.total_pages || 1;
+                if (result.count && result.page_size) {
+                    totalPages = Math.ceil(result.count / result.page_size);
                     console.log('📄 Total de páginas:', totalPages);
                     updatePagination();
-                } else if (data.total_pages) {
-                    totalPages = data.total_pages;
-                    console.log('📄 Total de páginas (alt):', totalPages);
-                    updatePagination();
-                } else {
-                    console.log('⚠️ Informações de paginação não encontradas na resposta');
                 }
             }
         } else {
-            console.error('❌ Erro na resposta:', result.error);
-            container.innerHTML = `<p class="loading">Nenhum produto encontrado. ${result.error ? '(' + result.error + ')' : ''}</p>`;
+            console.error('❌ Erro na resposta:', result);
+            container.innerHTML = '<p class="loading">Nenhum produto encontrado.</p>';
         }
     } catch (error) {
         console.error('💥 Erro ao carregar produtos:', error);
@@ -200,26 +188,33 @@ function createProductCard(product) {
     const card = document.createElement('div');
     card.className = 'product-card';
 
-    const isUnavailable = parseFloat(product.price) === 0 || product.price === "0,00" || parseFloat(product.price) < 0;
+    // ProductGroup tem min_price, max_price, avg_price em vez de price único
+    const minPrice = parseFloat(product.min_price) || 0;
+    const maxPrice = parseFloat(product.max_price) || 0;
+    const isUnavailable = minPrice === 0 || product.total_variantes === 0;
     
     if (isUnavailable) {
         card.classList.add('unavailable');
     }
 
-    const imageUrl = product.image_url || product.image || 'https://via.placeholder.com/200x200?text=Sem+Imagem';
+    const imageUrl = product.image_url || 'https://via.placeholder.com/200x200?text=Sem+Imagem';
+    const groupId = product.product_group_id || product.id;
     
     card.innerHTML = `
-        <img src="${imageUrl}" alt="${product.name}" class="product-image" onerror="this.src='https://via.placeholder.com/200x200?text=Sem+Imagem'" style="cursor: pointer;" onclick="window.location.href='produto-detalhes.html?id=${product.product_ID}'">
+        <img src="${imageUrl}" alt="${product.canonical_name}" class="product-image" 
+             onerror="this.src='https://via.placeholder.com/200x200?text=Sem+Imagem'" 
+             style="cursor: pointer;" 
+             onclick="window.location.href='produto-detalhes.html?id=${groupId}'">
         <div class="product-info">
-            <h3 class="product-name" style="cursor: pointer;" onclick="window.location.href='produto-detalhes.html?id=${product.product_ID}'">${truncateText(product.name, 60)}</h3>
-            <span class="product-store">${product.store || 'Loja'}</span>
+            <h3 class="product-name" style="cursor: pointer;" onclick="window.location.href='produto-detalhes.html?id=${groupId}'">${truncateText(product.canonical_name, 60)}</h3>
+            <span class="product-store">${product.total_variantes} loja${product.total_variantes > 1 ? 's' : ''}</span>
             ${isUnavailable ? '<span class="unavailable-badge">INDISPONÍVEL</span>' : ''}
-            <div class="product-price ${isUnavailable ? 'unavailable' : ''}">
-                ${isUnavailable ? 'Indisponível' : formatPrice(product.price)}
+            <div class="product-price-range ${isUnavailable ? 'unavailable' : ''}">
+                ${isUnavailable ? 'Indisponível' : `R$ ${minPrice.toFixed(2)} - R$ ${maxPrice.toFixed(2)}`}
             </div>
             <div class="product-actions">
                 <a 
-                    href="produto-detalhes.html?id=${product.product_ID}"
+                    href="produto-detalhes.html?id=${groupId}"
                     class="btn btn-primary product-button" 
                     style="text-decoration: none; display: inline-block;"
                 >
@@ -227,10 +222,10 @@ function createProductCard(product) {
                 </a>
                 <button 
                     class="btn btn-secondary product-button add-to-cart-btn"
-                    onclick="addProductToCart(${JSON.stringify(product).replace(/"/g, '&quot;')})"
+                    onclick="openProductGroupVariants(${groupId})"
                     ${isUnavailable ? 'disabled' : ''}
                 >
-                    🛒 Adicionar
+                    🛒 Ver Preços
                 </button>
             </div>
         </div>
@@ -239,14 +234,80 @@ function createProductCard(product) {
     return card;
 }
 
-function addProductToCart(product) {
+async function openProductGroupVariants(groupId) {
+    console.log(`📦 Abrindo variantes do grupo: ${groupId}`);
+    
+    try {
+        const group = await getProductGroup(groupId);
+        
+        if (group && group.variantes) {
+            // Abrir modal com variantes
+            showVariantsModal(group);
+        } else {
+            showNotification('Erro ao carregar variantes', 'error');
+        }
+    } catch (error) {
+        console.error('❌ Erro ao carregar variantes:', error);
+        showNotification('Erro ao carregar variantes', 'error');
+    }
+}
+
+function showVariantsModal(group) {
+    // Criar modal com as variantes
+    const modal = document.createElement('div');
+    modal.className = 'modal-overlay';
+    modal.id = 'variants-modal';
+    
+    const topVariants = (group.variantes || []).slice(0, 5);
+    const hasMore = (group.variantes || []).length > 5;
+    
+    let variantsHTML = topVariants.map(v => `
+        <div class="variant-item">
+            <span class="variant-store">${v.loja}</span>
+            <span class="variant-price">R$ ${parseFloat(v.preco_atual).toFixed(2)}</span>
+            <button class="btn-add-to-cart" onclick="addVariantToCart(${JSON.stringify(v).replace(/"/g, '&quot;')})">
+                Adicionar
+            </button>
+        </div>
+    `).join('');
+    
+    if (hasMore) {
+        variantsHTML += `<div class="variant-more">+ ${group.variantes.length - 5} mais ofertas</div>`;
+    }
+    
+    modal.innerHTML = `
+        <div class="modal-content">
+            <span class="modal-close" onclick="document.getElementById('variants-modal').remove();">&times;</span>
+            <h2>${group.canonical_name}</h2>
+            <div class="variants-list">
+                ${variantsHTML}
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+}
+
+function addVariantToCart(variant) {
+    // Criar um objeto product-like para o carrinho
+    const product = {
+        product_ID: variant.variant_id,
+        name: variant.loja + ' - R$ ' + parseFloat(variant.preco_atual).toFixed(2),
+        price: variant.preco_atual,
+        store: variant.loja,
+        image_url: variant.imagem_url || 'https://via.placeholder.com/200x200'
+    };
+    
     const isAdded = addToCart(product);
     
     if (isAdded) {
-        // Atualizar contagem do carrinho (aguardar para garantir que sincronizou)
         setTimeout(() => {
             updateCartCount();
+            document.getElementById('variants-modal')?.remove();
+            showNotification('Produto adicionado ao carrinho!', 'success');
         }, 300);
+    }
+}
         
         // Mostrar notificação personalizada
         if (typeof showNotification === 'function') {

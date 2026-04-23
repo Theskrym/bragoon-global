@@ -840,6 +840,15 @@
                             'info',
                             1500
                         );
+                    } else {
+                        window.open(product.product_link, '_blank');
+                        console.log(`✅ (${index + 1}/${productsToOpen.length}) Abrindo: ${product.name}`);
+                        showNotification(
+                            `Abrindo ${index + 1}/${productsToOpen.length}`,
+                            truncateText(product.name, 45),
+                            'info',
+                            1500
+                        );
                     }
                 }, delay);
                 delay += 800; // 800ms entre cada abertura

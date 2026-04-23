@@ -1,15 +1,15 @@
 import os
 import sys
-import django
 import csv
+import django
 from django.db import transaction
+from products.models import Product
 
 # Configuração do Django
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
 django.setup()
 
-from products.models import Product
 
 def convert_br_number(number_str):
     """Converte números no formato brasileiro (1.234,56) para float"""

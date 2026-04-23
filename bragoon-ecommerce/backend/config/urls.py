@@ -10,6 +10,9 @@ router = routers.DefaultRouter()
 router.register(r'products', views.ProductViewSet)
 router.register(r'alerts', views.AlertViewSet, basename='alert')
 router.register(r'carrinho', views.CartViewSet, basename='carrinho')
+router.register(r'product-groups', views.ProductGroupViewSet, basename='product-group')
+router.register(r'product-variants', views.ProductVariantViewSet, basename='product-variant')
+router.register(r'price-snapshots', views.PriceSnapshotViewSet, basename='price-snapshot')
 
 urlpatterns = [
     path('admin/', admin.site.urls),

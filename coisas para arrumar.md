@@ -24,3 +24,13 @@ ex.: "https://www.kabum.com.br/produto/320799/processador-amd-ryzen-5-5500-3-6gh
     - Ver produtos deduplilicados
     - Criar alerta
     - Receber notificação
+
+
+7. remover redundancias excessivas de "scrapper", em especifico da kabum,  ao invés de algumas tentativas diferentes estarem dentro de um try/except, estão dentro de um if else, ou seja, mesmo que o primeiro consiga a respsota, ele ainda vai tentar o segundo e o terceiro, adicionalmente, ao invés de ter essas 3 tentativas, descubrir qual delas funciona e mantenha apenas ela, e eu quero modularizar o código, eu quero que o scrapper da amazon seja um código separado, e o da kabum seja em outro, e depois eu faço um import com a funçao nescessária, para reduzir o tamanho do código total, simplificar alteraçoes e caso algo tenha que ser temporariamente removido para ser alterado, não impedir o fluxo do código por completo, remover tambem os timeouts excessivos e desnecsessários, com o objetivo de reduzir tempo de execução.
+
+8. tem uma quantidade consideravel de códigos legados que não estão mais sendo utilizados, julgue-os conforme o nescessário e remova os que não estão sendo utilizados.
+
+9.  alterar o html do frontend2, atualmente o código não tem nenhum modulo, ou seja, se quiser criar uma nova página, tem que criar a navbar da 0 novamente, entre outras coisas, faça um html só para a navbar e ela deve ser chamada pelas outras páginas, para evitar inconsistencias entre elas, faça isso com a maior quantidade de componentes possiveis que se enquadrem em algum desses parametros:
+    - são utilizados com frequencia em diversos códigos
+    - se eu for criar uma página nova, ele provavelmente vai ser utilizado novamente
+    - é um component que pode ter uma página dedicada a ele, exemplo, os graficos podem ter uma página inteira para fazer comparaçoes, entre outras coisas.

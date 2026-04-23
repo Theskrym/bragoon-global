@@ -147,7 +147,7 @@ def create_dynamic_filter_dict(filter_path):
         Com valores vazios ('') para níveis não utilizados.
     
     Exemplo:
-        filter_path = ['computadores', 'componentes', 'cpu', 'AMD', 'Socket AM5', 'Budget']
+        filter_path = ['computadores', 'componentes', 'cpu', 'AMD', 'Socket AM5']
         Retorna:
         {
             'menu': 'computadores',
@@ -637,7 +637,7 @@ def scrape_kabum_category(url, filter_path):
                 
                 # Esperar a página carregar - aguardar novas imagens aparecerem
                 print(f"\033[93m Aguardando carregamento da próxima página...\033[0m")
-                time.sleep(1)  # Pequeno delay para iniciar carregamento
+                time.sleep(3)  # Pequeno delay para iniciar carregamento
                 
                 try:
                     # Esperar até 15 segundos pelas imagens aparecerem

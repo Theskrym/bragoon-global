@@ -20,6 +20,14 @@ class Product(models.Model):
     def __str__(self):
         return self.name
 
+class PriceHistory(models.Model):
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='price_history')
+    date = models.DateField()
+    price = models.DecimalField(max_digits=10, decimal_places=2)
+    
+    class Meta:
+        ordering = ['-date']
+
 class Alert(models.Model):
     user = models.ForeignKey('auth.User', on_delete=models.CASCADE)
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
@@ -30,72 +38,9 @@ class Alert(models.Model):
         ('price_below', 'Preço abaixo de'),
         ('lowest_6_months', 'Preço mais baixo em 6 meses')
     ])
-    triggered_at = models.DateTimeField(null=True, blank=True, help_text="Quando o alerta foi disparado")
     
     def __str__(self):
         return f"{self.user.username} - {self.product.name}"
-
-class ProductGroup(models.Model):
-    """
-    Agrupa produtos que são o mesmo item (mesmas especificações).
-    Exemplo: Ryzen 5 5500 de diferentes lojas = 1 ProductGroup
-    """
-    canonical_name = models.CharField(max_length=500, unique=True, db_index=True, help_text="Nome canônico do produto (sem loja, preço, etc)")
-    canonical_product = models.ForeignKey(Product, on_delete=models.SET_NULL, null=True, blank=True, related_name='group_canonical', help_text="Produto com menor preço do grupo")
-    lowest_price = models.DecimalField(max_digits=10, decimal_places=2, default=0, help_text="Preço mais baixo atual do grupo")
-    highest_price = models.DecimalField(max_digits=10, decimal_places=2, default=0, help_text="Preço mais alto atual do grupo")
-    average_price = models.DecimalField(max_digits=10, decimal_places=2, default=0, help_text="Preço médio do grupo")
-    variant_count = models.IntegerField(default=0, help_text="Quantidade de variantes (lojas) deste produto")
-    last_updated = models.DateTimeField(auto_now=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    
-    class Meta:
-        verbose_name = "Grupo de Produtos"
-        verbose_name_plural = "Grupos de Produtos"
-        ordering = ['-last_updated']
-    
-    def __str__(self):
-        return self.canonical_name
-
-
-class PriceHistory(models.Model):
-    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='price_history')
-    group = models.ForeignKey(ProductGroup, on_delete=models.CASCADE, related_name='price_history', null=True, blank=True)
-    date = models.DateTimeField(auto_now_add=True, db_index=True)
-    price = models.DecimalField(max_digits=10, decimal_places=2)
-    store = models.CharField(max_length=100, blank=True, help_text="Loja onde foi registrado o preço")
-    is_lowest = models.BooleanField(default=False, help_text="Era o preço mais baixo no grupo naquela data")
-    is_highest = models.BooleanField(default=False, help_text="Era o preço mais alto no grupo naquela data")
-    
-    class Meta:
-        ordering = ['-date']
-        indexes = [
-            models.Index(fields=['group', '-date']),
-            models.Index(fields=['product', '-date']),
-        ]
-    
-    def __str__(self):
-        return f"{self.product.name} - R$ {self.price} em {self.date.date()}"
-
-class ProductVariant(models.Model):
-    """
-    Variante de um produto dentro de um grupo.
-    Diferentes lojas vendendo o mesmo produto = diferentes variantes.
-    """
-    group = models.ForeignKey(ProductGroup, on_delete=models.CASCADE, related_name='variants')
-    product = models.OneToOneField(Product, on_delete=models.CASCADE, related_name='variant_info')
-    store_name = models.CharField(max_length=100)
-    variant_name = models.CharField(max_length=200, blank=True, help_text="Nome específico da variante (cor, tamanho, etc)")
-    price = models.DecimalField(max_digits=10, decimal_places=2)
-    last_price_check = models.DateTimeField(auto_now=True)
-    is_available = models.BooleanField(default=True)
-    
-    class Meta:
-        unique_together = ['group', 'store_name']
-        ordering = ['price']
-    
-    def __str__(self):
-        return f"{self.group.canonical_name} - {self.store_name}"
 
 class UserProfile(models.Model):
     """
@@ -184,3 +129,109 @@ class SyncLog(models.Model):
     
     def __str__(self):
         return f"Sincronização em {self.timestamp} - {self.status}"
+
+
+# ===============================
+# DEDUPLICATION - PRODUCT GROUPS
+# ===============================
+
+class ProductGroup(models.Model):
+    """
+    Grupo de produtos deduplilicados (mesmo produto de diferentes lojas).
+    Cada grupo contém várias ProductVariant (mesma CPU em Kabum, Pichau, etc).
+    """
+    product_group_id = models.AutoField(primary_key=True)
+    canonical_name = models.CharField(max_length=300, db_index=True, help_text="Nome único do produto")
+    category = models.CharField(max_length=100, db_index=True, blank=True, null=True)
+    image_url = models.URLField(blank=True, null=True)
+    
+    # Preços agregados
+    min_price = models.DecimalField(max_digits=10, decimal_places=2, default=0, db_index=True)
+    max_price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    avg_price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    total_variantes = models.IntegerField(default=0, help_text="Quantidade de variantes (lojas)")
+    
+    # Timestamps
+    criado_em = models.DateTimeField(auto_now_add=True)
+    atualizado_em = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['canonical_name']
+        indexes = [
+            models.Index(fields=['canonical_name']),
+            models.Index(fields=['category']),
+            models.Index(fields=['min_price']),
+        ]
+        verbose_name = "Grupo de Produtos"
+        verbose_name_plural = "Grupos de Produtos"
+    
+    def __str__(self):
+        return f"{self.canonical_name} ({self.total_variantes} variantes)"
+
+
+class ProductVariant(models.Model):
+    """
+    Variante individual de um produto (mesmo produto de diferentes lojas).
+    Cada variante é um link único para um produto em uma loja específica.
+    """
+    variant_id = models.AutoField(primary_key=True)
+    product_group = models.ForeignKey(ProductGroup, on_delete=models.CASCADE, related_name='variantes')
+    original_product = models.OneToOneField(Product, on_delete=models.CASCADE, related_name='variant_info', null=True, blank=True)
+    
+    # Informações específicas da variante
+    loja = models.CharField(max_length=100, db_index=True)
+    preco_atual = models.DecimalField(max_digits=10, decimal_places=2)
+    preco_anterior = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    link_produto = models.URLField()
+    link_afiliado = models.URLField(blank=True, null=True)
+    imagem_url = models.URLField(blank=True, null=True)
+    
+    # Avaliações
+    rating = models.FloatField(default=0)
+    review_count = models.IntegerField(default=0)
+    
+    # Disponibilidade
+    disponivel = models.BooleanField(default=True)
+    estoque = models.CharField(max_length=50, blank=True, null=True)
+    
+    # Rastreamento
+    posicao_ranking = models.IntegerField(default=999, help_text="Posição no ranking de preço (1 = mais barato)")
+    criado_em = models.DateTimeField(auto_now_add=True)
+    atualizado_em = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['preco_atual']
+        unique_together = ['product_group', 'loja', 'link_produto']
+        verbose_name = "Variante de Produto"
+        verbose_name_plural = "Variantes de Produtos"
+    
+    def __str__(self):
+        return f"{self.loja} - R$ {self.preco_atual}"
+
+
+class PriceSnapshot(models.Model):
+    """
+    Snapshot histórico de preços para um ProductGroup.
+    Armazena min/max/média diária (máximo 360 snapshots = 1 ano).
+    """
+    snapshot_id = models.AutoField(primary_key=True)
+    product_group = models.ForeignKey(ProductGroup, on_delete=models.CASCADE, related_name='price_snapshots')
+    data = models.DateField(db_index=True)
+    
+    # Preços do dia
+    preco_minimo = models.DecimalField(max_digits=10, decimal_places=2)
+    preco_maximo = models.DecimalField(max_digits=10, decimal_places=2)
+    preco_medio = models.DecimalField(max_digits=10, decimal_places=2)
+    
+    # Metadata
+    total_variantes = models.IntegerField(help_text="Quantidade de variantes neste dia")
+    criado_em = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        ordering = ['-data']
+        unique_together = ['product_group', 'data']
+        verbose_name = "Snapshot de Preço"
+        verbose_name_plural = "Snapshots de Preço"
+    
+    def __str__(self):
+        return f"{self.product_group.canonical_name} - {self.data}"

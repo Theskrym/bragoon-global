@@ -4,8 +4,8 @@ from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.parsers import MultiPartParser, FormParser
 from django_filters.rest_framework import DjangoFilterBackend
-from .models import Product, PriceHistory, Alert, UserProfile, Cart, CartItem, SyncLog, ProductGroup, ProductVariant
-from .serializers import ProductSerializer, PriceHistorySerializer, AlertSerializer, UserProfileSerializer, CartSerializer, CartItemSerializer, ProductGroupSerializer, ProductGroupDetailSerializer, ProductVariantSerializer
+from .models import Product, PriceHistory, Alert, UserProfile, Cart, CartItem, SyncLog, ProductGroup, ProductVariant, PriceSnapshot
+from .serializers import ProductSerializer, PriceHistorySerializer, AlertSerializer, UserProfileSerializer, CartSerializer, CartItemSerializer, ProductGroupSerializer, ProductGroupDetailSerializer, ProductVariantSerializer, PriceSnapshotSerializer
 from django.db.models import Min, Max, Avg, Case, When, Q, BooleanField, F, Sum
 from django.utils import timezone
 from datetime import timedelta
@@ -367,83 +367,82 @@ class AlertViewSet(viewsets.ModelViewSet):
         return Response({
             'status': 'not_triggered',
             'message': 'O alerta não foi acionado'
-        })
+        })# Novos ViewSets para ProductGroup, ProductVariant e PriceSnapshot
 
-
-class ProductGroupViewSet(viewsets.ModelViewSet):
+class ProductGroupViewSet(viewsets.ReadOnlyModelViewSet):
     """
-    API endpoint para grupos de produtos (deduplicados).
+    API endpoint para grupos de produtos deduplilicados.
     GET /api/product-groups/ - Lista todos os grupos
-    GET /api/product-groups/{id}/ - Detalhes do grupo com histórico de preços
+    GET /api/product-groups/{id}/ - Detalhes de um grupo
+    GET /api/product-groups/{id}/variants/ - Variantes de um grupo
     """
     queryset = ProductGroup.objects.all()
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['menu', 'type', 'created_at']
+    serializer_class = ProductGroupSerializer
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
+    filterset_fields = ['category']
     search_fields = ['canonical_name']
-    ordering_fields = ['lowest_price', 'average_price', 'created_at', 'variant_count']
-    ordering = ['-created_at']
+    lookup_field = 'product_group_id'
     
     def get_serializer_class(self):
+        """Usa serializer detalhado na ação detail"""
         if self.action == 'retrieve':
             return ProductGroupDetailSerializer
         return ProductGroupSerializer
     
     @action(detail=True, methods=['get'])
-    def price_chart_data(self, request, pk=None):
-        """
-        Retorna dados para gráfico de preços (até 360 pontos).
-        GET /api/product-groups/{id}/price_chart_data/
-        """
+    def variants(self, request, product_group_id=None):
+        """Retorna todas as variantes de um grupo (com paginação)"""
         group = self.get_object()
-        history = group.price_history.all().order_by('-date')[:360]
+        page = int(request.query_params.get('page', 1))
+        page_size = int(request.query_params.get('page_size', 10))
         
-        chart_data = {
-            'dates': [],
-            'prices': [],
-            'lowest_prices': [],
-            'highest_prices': [],
-            'average_prices': []
-        }
+        variants = group.variantes.all()
+        total = variants.count()
         
-        for entry in reversed(history):
-            chart_data['dates'].append(entry.date.strftime('%Y-%m-%d %H:%M'))
-            chart_data['prices'].append(float(entry.price))
-            chart_data['lowest_prices'].append(float(group.lowest_price))
-            chart_data['highest_prices'].append(float(group.highest_price))
-            chart_data['average_prices'].append(float(group.average_price))
+        start = (page - 1) * page_size
+        end = start + page_size
+        
+        paginated = variants[start:end]
         
         return Response({
-            'group_id': group.id,
-            'group_name': group.canonical_name,
-            'chart_data': chart_data,
-            'current_lowest': float(group.lowest_price),
-            'current_highest': float(group.highest_price),
-            'current_average': float(group.average_price),
-            'variant_count': group.variant_count,
-            'last_updated': group.last_updated.isoformat()
+            'count': total,
+            'page': page,
+            'page_size': page_size,
+            'variants': ProductVariantSerializer(paginated, many=True).data
+        })
+    
+    @action(detail=True, methods=['get'])
+    def price_history(self, request, product_group_id=None):
+        """Retorna histórico de preços (últimos 360 dias)"""
+        group = self.get_object()
+        snapshots = group.price_snapshots.all()[:360]
+        
+        return Response({
+            'total_points': snapshots.count(),
+            'data': PriceSnapshotSerializer(snapshots, many=True).data
         })
 
 
 class ProductVariantViewSet(viewsets.ReadOnlyModelViewSet):
     """
-    API endpoint para variantes de produtos.
+    API endpoint para variantes individuais de produtos.
     GET /api/product-variants/ - Lista todas as variantes
-    GET /api/product-variants/{id}/ - Detalhes da variante
+    GET /api/product-variants/{id}/ - Detalhes de uma variante
     """
-    queryset = ProductVariant.objects.all()
+    queryset = ProductVariant.objects.all().order_by('preco_atual')
     serializer_class = ProductVariantSerializer
-    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
-    filterset_fields = ['group', 'store_name', 'is_available']
-    ordering_fields = ['price', 'last_price_check']
-    ordering = ['price']
-    
-    @action(detail=False, methods=['get'])
-    def by_group(self, request):
-        """Retorna variantes de um grupo específico"""
-        group_id = request.query_params.get('group_id')
-        if not group_id:
-            return Response({'error': 'group_id é obrigatório'}, status=status.HTTP_400_BAD_REQUEST)
-        
-        variants = self.queryset.filter(group_id=group_id).order_by('price')
-        serializer = self.get_serializer(variants, many=True)
-        return Response(serializer.data)
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
+    filterset_fields = ['product_group', 'loja', 'disponivel']
+    lookup_field = 'variant_id'
+
+
+class PriceSnapshotViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    API endpoint para snapshots de preço históricos.
+    GET /api/price-snapshots/ - Lista snapshots
+    GET /api/price-snapshots/{id}/ - Detalhes de um snapshot
+    """
+    queryset = PriceSnapshot.objects.all().order_by('-data')
+    serializer_class = PriceSnapshotSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['product_group', 'data']

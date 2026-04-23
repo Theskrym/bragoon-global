@@ -5,15 +5,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Detalhes do Produto - BRAGOON Agregador de Preços</title>
     <link rel="stylesheet" href="css/styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         .product-detail-container {
             max-width: 1200px;
             margin: 0 auto;
             padding: 30px 20px;
+        }
+
+        .product-overview {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 40px;
             align-items: start;
+            margin-bottom: 40px;
         }
 
         .product-image-section {
@@ -30,7 +35,7 @@
 
         .product-info-section h1 {
             font-size: 2em;
-            color: #333;
+            color: #251708;
             margin: 20px 0;
         }
 
@@ -43,7 +48,7 @@
         }
 
         .rating-info .stars {
-            color: #ffc107;
+            color: #f7e07e;
         }
 
         .rating-info .review-count {
@@ -245,62 +250,80 @@
 
         <div id="product-detail" class="product-detail-container" style="display: none;">
             <!-- Lado Esquerdo: Imagem -->
-            <div class="product-image-section">
-                <img id="product-image" src="" alt="Produto" onerror="this.src='https://via.placeholder.com/400x400?text=Sem+Imagem'">
+            <div class="product-overview">
+                <div class="product-image-section">
+                    <img id="product-image" src="" alt="Produto" onerror="this.src='https://via.placeholder.com/400x400?text=Sem+Imagem'">
+                </div>
+
+                <!-- Lado Direito: Informações -->
+                <div class="product-info-section">
+                    <h1 id="product-name"></h1>
+
+                    <!-- Rating -->
+                    <div class="rating-info">
+                        <span class="stars" id="product-rating"></span>
+                        <span class="review-count" id="product-reviews"></span>
+                    </div>
+
+                    <!-- Alerta de Indisponibilidade -->
+                    <div id="unavailable-alert" class="unavailable-alert">
+                        ⚠️ Produto atualmente indisponível nesta loja
+                    </div>
+
+                    <!-- Preço -->
+                    <div class="price-section">
+                        <div class="current-price" id="product-price"></div>
+                        <div class="store-badge" id="product-store"></div>
+                    </div>
+
+                    <!-- Botões de Ação -->
+                    <div class="action-buttons">
+                        <button class="btn-add-cart" id="btn-add-cart" onclick="addToCartFromDetail()">
+                            🛒 Adicionar ao Carrinho
+                        </button>
+                        <a class="btn-visit-store" id="btn-visit-store" target="_blank" rel="noopener noreferrer">
+                            🔗 Ir para a Loja
+                        </a>
+                    </div>
+
+                    <!-- Metadados -->
+                    <div class="product-meta">
+                        <div class="meta-item">
+                            <span>Categoria:</span>
+                            <strong id="product-menu"></strong>
+                        </div>
+                        <div class="meta-item">
+                            <span>Tipo:</span>
+                            <strong id="product-type"></strong>
+                        </div>
+                        <div class="meta-item">
+                            <span>ID do Produto:</span>
+                            <strong id="product-id"></strong>
+                        </div>
+                        <div class="meta-item">
+                            <span>Filtro:</span>
+                            <strong id="product-filter"></strong>
+                        </div>
+                        <div class="meta-item">
+                            <span>Sub-filtro:</span>
+                            <strong id="product-subfilter"></strong>
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            <!-- Lado Direito: Informações -->
-            <div class="product-info-section">
-                <h1 id="product-name"></h1>
-
-                <!-- Rating -->
-                <div class="rating-info">
-                    <span class="stars" id="product-rating"></span>
-                    <span class="review-count" id="product-reviews"></span>
+            <!-- SEÇÃO DE GRÁFICOS -->
+            <div id="charts-section" class="charts-section" style="margin-top: 40px; border-top: 2px solid #ddd; padding-top: 40px;">
+                <h2 style="color: #251708; margin-bottom: 20px;">📊 Histórico de Preços</h2>
+                
+                <div id="price-chart-container" style="position: relative; height: 400px;">
+                    <canvas id="priceChart"></canvas>
                 </div>
 
-                <!-- Alerta de Indisponibilidade -->
-                <div id="unavailable-alert" class="unavailable-alert">
-                    ⚠️ Produto atualmente indisponível nesta loja
-                </div>
-
-                <!-- Preço -->
-                <div class="price-section">
-                    <div class="current-price" id="product-price"></div>
-                    <div class="store-badge" id="product-store"></div>
-                </div>
-
-                <!-- Botões de Ação -->
-                <div class="action-buttons">
-                    <button class="btn-add-cart" id="btn-add-cart" onclick="addToCartFromDetail()">
-                        🛒 Adicionar ao Carrinho
-                    </button>
-                    <a class="btn-visit-store" id="btn-visit-store" target="_blank" rel="noopener noreferrer">
-                        🔗 Ir para a Loja
-                    </a>
-                </div>
-
-                <!-- Metadados -->
-                <div class="product-meta">
-                    <div class="meta-item">
-                        <span>Categoria:</span>
-                        <strong id="product-menu"></strong>
-                    </div>
-                    <div class="meta-item">
-                        <span>Tipo:</span>
-                        <strong id="product-type"></strong>
-                    </div>
-                    <div class="meta-item">
-                        <span>ID do Produto:</span>
-                        <strong id="product-id"></strong>
-                    </div>
-                    <div class="meta-item">
-                        <span>Filtro:</span>
-                        <strong id="product-filter"></strong>
-                    </div>
-                    <div class="meta-item">
-                        <span>Sub-filtro:</span>
-                        <strong id="product-subfilter"></strong>
+                <div id="variants-list" style="margin-top: 30px;">
+                    <h3 style="color: #251708; margin-bottom: 15px;">🏪 Ofertas em Lojas</h3>
+                    <div id="variants-container" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 15px;">
+                        <!-- Variantes serão inseridas aqui -->
                     </div>
                 </div>
             </div>
@@ -329,7 +352,8 @@
     <script src="js/navbar.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
-        let currentProduct = null;
+        let currentGroup = null;
+        let priceChart = null;
 
         document.addEventListener('DOMContentLoaded', async () => {
             updateCartCount();
@@ -338,80 +362,218 @@
 
         async function loadProductDetail() {
             const urlParams = new URLSearchParams(window.location.search);
-            const productId = urlParams.get('id');
+            const groupId = urlParams.get('id');
 
-            if (!productId) {
-                showError('❌ Nenhum produto especificado');
+            if (!groupId) {
+                showError('Nenhum produto especificado');
                 return;
             }
 
             showLoading(true);
 
             try {
-                const result = await getProductDetail(productId);
-
-                if (result.success && result.data) {
-                    currentProduct = result.data;
-                    displayProductDetail(currentProduct);
+                // Carregar detalhes do grupo
+                const group = await getProductGroup(groupId);
+                
+                if (group && group.product_group_id) {
+                    currentGroup = group;
+                    displayProductDetail(group);
+                    
+                    // Carregar histórico de preços
+                    const priceHistory = await getProductGroupPriceHistory(groupId);
+                    if (priceHistory && priceHistory.data) {
+                        displayPriceChart(priceHistory.data);
+                    }
+                    
+                    // Exibir variantes
+                    displayVariants(group.variantes || []);
                 } else {
-                    showError('❌ Produto não encontrado: ' + result.error);
+                    showError('Produto não encontrado');
                 }
             } catch (error) {
                 console.error('Erro ao carregar produto:', error);
-                showError('❌ Erro ao carregar produto: ' + error.message);
+                showError('Erro ao carregar produto: ' + error.message);
             } finally {
                 showLoading(false);
             }
         }
 
-        function displayProductDetail(product) {
-            const isUnavailable = parseFloat(product.price) === 0 || product.price === "0,00" || parseFloat(product.price) < 0;
-
+        function displayProductDetail(group) {
             // Preencher dados
-            document.getElementById('product-image').src = product.image_url || 'https://via.placeholder.com/400x400?text=Sem+Imagem';
-            document.getElementById('product-name').textContent = product.name;
-            document.getElementById('product-price').textContent = isUnavailable ? 'Indisponível' : formatPrice(product.price);
-            document.getElementById('product-store').textContent = product.store || 'Loja não especificada';
-            document.getElementById('product-id').textContent = product.product_ID;
-            document.getElementById('product-menu').textContent = product.menu || '-';
-            document.getElementById('product-type').textContent = product.type || '-';
-            document.getElementById('product-filter').textContent = product.filter || '-';
-            document.getElementById('product-subfilter').textContent = product.subfilter || '-';
+            document.getElementById('product-image').src = group.image_url || 'https://via.placeholder.com/400x400?text=Sem+Imagem';
+            document.getElementById('product-name').textContent = group.canonical_name;
+            
+            const minPrice = parseFloat(group.min_price) || 0;
+            const maxPrice = parseFloat(group.max_price) || 0;
+            const avgPrice = parseFloat(group.avg_price) || 0;
+            
+            document.getElementById('product-price').textContent = `R$ ${minPrice.toFixed(2)} - R$ ${maxPrice.toFixed(2)} (Média: R$ ${avgPrice.toFixed(2)})`;
+            document.getElementById('product-store').textContent = `${group.total_variantes} loja(s) disponível(is)`;
+            document.getElementById('product-id').textContent = group.product_group_id;
+            document.getElementById('product-menu').textContent = group.category || '-';
+            
+            // Mostrar detalhe
+            document.getElementById('product-detail').style.display = 'block';
+        }
 
-            // Rating
-            const rating = parseFloat(product.rating) || 0;
-            const reviewCount = product.review_count || 0;
-            document.getElementById('product-rating').textContent = '★'.repeat(Math.round(rating)) + '☆'.repeat(5 - Math.round(rating)) + ` ${rating.toFixed(1)}`;
-            document.getElementById('product-reviews').textContent = `${reviewCount} avaliações`;
-
-            // Alerta de indisponibilidade
-            const unavailableAlert = document.getElementById('unavailable-alert');
-            if (isUnavailable) {
-                unavailableAlert.classList.add('show');
-            } else {
-                unavailableAlert.classList.remove('show');
+        function displayPriceChart(snapshots) {
+            if (!snapshots || snapshots.length === 0) {
+                console.log('Nenhum snapshot de preço disponível');
+                return;
             }
 
-            // Botão de loja
-            const btnVisitStore = document.getElementById('btn-visit-store');
-            btnVisitStore.href = product.affiliate_link || '#';
-            btnVisitStore.style.opacity = isUnavailable ? '0.5' : '1';
+            // Ordenar por data
+            const sorted = snapshots.sort((a, b) => new Date(a.data) - new Date(b.data));
+            
+            // Limitar a 360 pontos (1 ano)
+            const limited = sorted.slice(-360);
 
-            // Botão de carrinho
-            const btnAddCart = document.getElementById('btn-add-cart');
-            btnAddCart.disabled = isUnavailable;
-            btnAddCart.textContent = isUnavailable ? '❌ Indisponível' : '🛒 Adicionar ao Carrinho';
+            const labels = limited.map(s => {
+                const date = new Date(s.data);
+                return date.toLocaleDateString('pt-BR', { month: '2-digit', day: '2-digit' });
+            });
 
-            // Mostrar detalhe
-            document.getElementById('product-detail').style.display = 'grid';
+            const minData = limited.map(s => parseFloat(s.preco_minimo));
+            const maxData = limited.map(s => parseFloat(s.preco_maximo));
+            const avgData = limited.map(s => parseFloat(s.preco_medio));
+
+            const ctx = document.getElementById('priceChart').getContext('2d');
+            
+            if (priceChart) {
+                priceChart.destroy();
+            }
+
+            priceChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Preço Mínimo',
+                            data: minData,
+                            borderColor: '#28a745',
+                            backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                            tension: 0.3,
+                            fill: true
+                        },
+                        {
+                            label: 'Preço Médio',
+                            data: avgData,
+                            borderColor: '#b08c43',
+                            backgroundColor: 'rgba(176, 140, 67, 0.1)',
+                            tension: 0.3,
+                            fill: true
+                        },
+                        {
+                            label: 'Preço Máximo',
+                            data: maxData,
+                            borderColor: '#dc3545',
+                            backgroundColor: 'rgba(220, 53, 69, 0.1)',
+                            tension: 0.3,
+                            fill: true
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                color: '#251708',
+                                font: { size: 12 }
+                            }
+                        },
+                        title: {
+                            display: true,
+                            text: 'Histórico de Preços (Últimos 360 dias)',
+                            color: '#251708'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            ticks: { color: '#666' },
+                            grid: { color: 'rgba(0,0,0,0.1)' }
+                        },
+                        x: {
+                            ticks: { color: '#666' },
+                            grid: { color: 'rgba(0,0,0,0.1)' }
+                        }
+                    }
+                }
+            });
+        }
+
+        function displayVariants(variants) {
+            const container = document.getElementById('variants-container');
+            container.innerHTML = '';
+
+            if (!variants || variants.length === 0) {
+                container.innerHTML = '<p>Nenhuma variante disponível</p>';
+                return;
+            }
+
+            // Mostrar top 5 variantes (mais baratas)
+            const top5 = variants.slice(0, 5);
+            
+            top5.forEach(variant => {
+                const price = parseFloat(variant.preco_atual);
+                const card = document.createElement('div');
+                card.style.cssText = `
+                    border: 1px solid #ddd;
+                    border-radius: 8px;
+                    padding: 15px;
+                    background: #f9f9f9;
+                    border-left: 4px solid #b08c43;
+                `;
+                
+                card.innerHTML = `
+                    <div style="font-weight: 600; color: #251708; margin-bottom: 10px;">${variant.loja}</div>
+                    <div style="font-size: 1.5rem; font-weight: bold; color: #28a745; margin-bottom: 10px;">R$ ${price.toFixed(2)}</div>
+                    <div style="font-size: 0.9rem; color: #666; margin-bottom: 10px;">
+                        ${variant.disponivel ? '✅ Disponível' : '❌ Indisponível'}
+                    </div>
+                    <a href="${variant.link_afiliado || variant.link_produto}" target="_blank" style="display: block; text-align: center; background: #28a745; color: white; padding: 8px; border-radius: 5px; text-decoration: none; font-weight: 600;">
+                        🛒 Ver na Loja
+                    </a>
+                `;
+                
+                container.appendChild(card);
+            });
+
+            if (variants.length > 5) {
+                const moreDiv = document.createElement('div');
+                moreDiv.style.cssText = `
+                    padding: 15px;
+                    text-align: center;
+                    color: #666;
+                    font-style: italic;
+                    grid-column: 1 / -1;
+                `;
+                moreDiv.textContent = `+ ${variants.length - 5} mais ofertas`;
+                container.appendChild(moreDiv);
+            }
         }
 
         function addToCartFromDetail() {
-            if (!currentProduct) return;
+            if (!currentGroup || !currentGroup.variantes || currentGroup.variantes.length === 0) return;
 
-            const isAdded = addToCart(currentProduct);
+            // Adicionar primeira variante (mais barata)
+            const variant = currentGroup.variantes[0];
+            const product = {
+                product_ID: variant.variant_id,
+                name: currentGroup.canonical_name,
+                price: variant.preco_atual,
+                store: variant.loja,
+                image_url: currentGroup.image_url || 'https://via.placeholder.com/200'
+            };
+
+            const isAdded = addToCart(product);
             if (isAdded) {
-                showSuccess(`✅ "${currentProduct.name}" foi adicionado ao carrinho!`);
+                showSuccess(`✅ "${currentGroup.canonical_name}" foi adicionado ao carrinho!`);
                 updateCartCount();
             }
         }
