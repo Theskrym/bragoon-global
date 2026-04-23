@@ -819,16 +819,24 @@ def scrape_all_categories():
         # Formata apenas para hora:minuto:segundo
     horainicio = horainicial.strftime("%H:%M:%S")
 
+    print(f"Hora início: {horainicio} ")
 
-    # Scraping Amazon
-    for menu, categories in amazon_categories.items():
-        process_categories_recursive(categories, [menu], scrape_amazon_category, 'amazon')
-   
-    # Scraping Kabum
-    for menu, categories in kabum_categories.items():
-        process_categories_recursive(categories, [menu], scrape_kabum_category, 'Kabum')
-    
-    
+    try:
+        # Scraping Amazon
+        for menu, categories in amazon_categories.items():
+            process_categories_recursive(categories, [menu], scrape_amazon_category, 'amazon')
+    except KeyboardInterrupt:
+        pass
+
+    try:    
+        # Scraping Kabum
+        for menu, categories in kabum_categories.items():
+            process_categories_recursive(categories, [menu], scrape_kabum_category, 'Kabum')
+    except KeyboardInterrupt:
+        pass    
+    except Exception as e:
+        print(f"\033[91mErro geral durante scraping Kabum: {e}\033[0m")
+        pass
     horafinal = datetime.now()
 
         # Formata apenas para hora:minuto:segundo
